@@ -149,7 +149,7 @@ def backward(w, b, u, z, delta, func):
     return dEdW, dEdB
 
 
-def adjust_network(w, b, dEdW, dEdB, learning_late=0.05):
+def adjust_network(w, b, dEdW, dEdB, learning_rate=0.05):
     """
      ネットワークのパラメタ―調整を行います.
     :param w: ネットワークの重み行列
@@ -166,7 +166,7 @@ def adjust_network(w, b, dEdW, dEdB, learning_late=0.05):
         # 微分値が正 → Wijを大きくしたら誤差Eが大きくなるんでWijを少し小さくする
         # 微分値が負 → Wjiを大きくしたら誤差Eが小さくなるんでWijを少し大きくする
         # 少し = 学習率 ここでは 微分値の 0.05 倍
-        w[idx] = w[idx] - learning_late * dEdW[idx]
-        b[idx] = b[idx] - learning_late * dEdB[idx]
+        w[idx] = w[idx] - learning_rate * dEdW[idx]
+        b[idx] = b[idx] - learning_rate * dEdB[idx]
 
     return w, b
