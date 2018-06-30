@@ -11,6 +11,16 @@ def sigmoid(x):
     return 1.0 / (1.0 + np.exp(-1.0 * x))
 
 
+def tanh(x):
+    """
+    双曲線正接関数
+    :param x:
+    :return: tanh(x)
+    """
+    return (np.exp(x) - np.exp(-1.0 * x)) / (np.exp(x) + np.exp(-1.0 * x))
+
+
+
 def relu(x):
     """
      Rectified Linear Unit (正規化線形関数)
@@ -49,6 +59,26 @@ def d_relu(x):
     """
 
     return np.where(x > 0, 1, 0)
+
+
+def d_tanh(x):
+    """
+    双曲線正接関数の導関数
+    :param x:
+    :return: tanh'(x)
+    """
+
+    return 4.0 / np.power((np.exp(x) + np.exp(-1.0 * x)), 2)
+
+
+def d_identity_mapping(x):
+    """
+     恒等写像の導関数
+    :param x:
+    :return: 常に1を変えします
+    """
+
+    return np.ones_like(x)
 
 
 def least_square(d, y):
