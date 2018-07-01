@@ -7,7 +7,6 @@ def sigmoid(x):
     :param x:
     :return: sigmoid(x)
     """
-
     return 1.0 / (1.0 + np.exp(-1.0 * x))
 
 
@@ -17,8 +16,8 @@ def tanh(x):
     :param x:
     :return: tanh(x)
     """
-    return (np.exp(x) - np.exp(-1.0 * x)) / (np.exp(x) + np.exp(-1.0 * x))
-
+    # return (np.exp(x) - np.exp(-1.0 * x)) / (np.exp(x) + np.exp(-1.0 * x))
+    return np.tanh(x)
 
 
 def relu(x):
@@ -36,7 +35,6 @@ def identity_mapping(x):
     :param x:
     :return: xをそのまま返します
     """
-
     return x
 
 
@@ -46,7 +44,6 @@ def d_sigmoid(x):
     :param x:
     :return: sigmoid'(x)
     """
-
     dx = (1.0 - sigmoid(x)) * sigmoid(x)
     return dx
 
@@ -57,7 +54,6 @@ def d_relu(x):
     :param x:
     :return: relu'(x)
     """
-
     return np.where(x > 0, 1, 0)
 
 
@@ -67,7 +63,6 @@ def d_tanh(x):
     :param x:
     :return: tanh'(x)
     """
-
     return 4.0 / np.power((np.exp(x) + np.exp(-1.0 * x)), 2)
 
 
@@ -77,7 +72,6 @@ def d_identity_mapping(x):
     :param x:
     :return: 常に1を変えします
     """
-
     return np.ones_like(x)
 
 
@@ -88,5 +82,4 @@ def least_square(d, y):
     :param y:予想(actual)
     :return: 自乗誤差
     """
-
     return np.sum(np.square(d - y)) / 2

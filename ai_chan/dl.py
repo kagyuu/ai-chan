@@ -1,21 +1,7 @@
 import numpy as np
 
 
-def create_random_layer(in_size, out_size):
-    """
-     1レイヤ分をランダムに初期化します.
-    :param in_size: 入力サイズ
-    :param out_size: 出力サイズ
-    :return w: 重み行列
-    :return b: バイアス
-    """
-
-    w = np.random.rand(out_size, in_size)
-    b = np.random.rand(1, out_size).T
-    return w, b
-
-
-def create_seq_layer(in_size, out_size):
+def create_layer_seq(in_size, out_size):
     """
      1レイヤ分をシーケンス値で初期化します.
     順伝搬・逆伝搬の検証用に使います
@@ -30,11 +16,53 @@ def create_seq_layer(in_size, out_size):
     return w, b
 
 
-def create_network(*units, create_layer=create_random_layer):
+def create_layer_random(in_size, out_size):
+    """
+     1レイヤ分をランダム(平均0, 分散1)に初期化します.
+    :param in_size: 入力サイズ
+    :param out_size: 出力サイズ
+    :return w: 重み行列
+    :return b: バイアス
+    """
+    w = np.random.normal(0, 1, (out_size, in_size))
+    b = np.random.normal(0, 1, (1, out_size)).T
+    return w, b
+
+
+def create_layer_xavier(in_size, out_size):
+    """
+     1レイヤ分をランダム(平均0, 分散√in_size)に初期化します.
+     各層の出力が、平均0 分散1 になるような初期ネットワークを作成します.
+    :param in_size: 入力サイズ
+    :param out_size: 出力サイズ
+    :return w: 重み行列
+    :return b: バイアス
+    """
+    w = np.random.normal(0, np.sqrt(in_size), (out_size, in_size))
+    b = np.random.normal(0, np.sqrt(in_size), (1, out_size)).T
+    return w, b
+
+
+def create_layer_he(in_size, out_size):
+    """
+     1レイヤ分をランダム(平均0, 分散(√(in_size/2)に初期化します.
+     各層の出力が、平均0 分散2 になるような初期ネットワークを作成します.
+     ReLuでは、半分(x<0)が0になるので、有効な部分(0≧x)の分散を2倍する.
+    :param in_size: 入力サイズ
+    :param out_size: 出力サイズ
+    :return w: 重み行列
+    :return b: バイアス
+    """
+    w = np.random.normal(0, np.sqrt(in_size/2), (out_size, in_size))
+    b = np.random.normal(0, np.sqrt(in_size/2), (1, out_size)).T
+    return w, b
+
+
+def create_network(*units, layer_factory=create_layer_random):
     """
      nレイヤ分のネットワークを作成します.
     :param *units: 中間層のサイズを可変引数で指定します
-    :param create_layer: 1層分の w,b を作る関数を指定します。デフォルト値は、ランダム初期化
+    :param layer_factory: 1層分の w,b を作る関数を指定します。デフォルト値は、ランダム初期化
     :return w: 重み行列
     :return b: バイアス
     """
@@ -49,7 +77,7 @@ def create_network(*units, create_layer=create_random_layer):
         in_size = units[layer]
         out_size = units[layer + 1]
 
-        w, b = create_layer(in_size, out_size)
+        w, b = layer_factory(in_size, out_size)
 
         w_lst.append(w)
         b_lst.append(b)
@@ -123,7 +151,7 @@ def backward(w, b, u, z, delta, func):
     batch_size = delta.shape[1]
 
     for layer in range(len(w) - 1, 0, -1):
-        # dEdW = δ[l] (z[l-1].T)
+        # dEdW = δ[l] (z[l-1].T) の各要素をバッチサイズで割ったもの
         # dEdB = δ[l] の各行平均
         dEdW.append(np.dot(delta, z[layer - 1].T) / batch_size)
         dEdB.append(np.array([np.mean(delta, axis=1)]).T)

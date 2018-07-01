@@ -41,7 +41,7 @@ class TestCreateNetwork(unittest.TestCase):
         # L0:None(添え字を層番号と揃えるためのダミー)
         # L1:in 2→ out 3
         # L2:in 3→ out 1
-        w, b = dl.create_network(2, 3, 1, create_layer=dl.create_seq_layer)
+        w, b = dl.create_network(2, 3, 1, layer_factory=dl.create_layer_seq)
 
         self.assertEqual(3, len(w))
         self.assertEqual(3, len(b))

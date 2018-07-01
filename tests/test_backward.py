@@ -22,7 +22,7 @@ class TestBackward(unittest.TestCase):
         # |0 1 2| | 0| + |0| = | 2| - 恒等 -> | 2|
         #         | 0|                         D
         #         | 1|                        | 0|
-        w, b = dl.create_network(2, 3, 1, create_layer=dl.create_seq_layer)
+        w, b = dl.create_network(2, 3, 1, layer_factory=dl.create_layer_seq)
         x = np.array([
             [1],
             [-1]
@@ -70,7 +70,7 @@ class TestBackward(unittest.TestCase):
         """
         1データを繰り返しパラメータ調整を行うことで、誤差が小さくなることを検証します
         """
-        w, b = dl.create_network(2, 3, 1, create_layer=dl.create_seq_layer)
+        w, b = dl.create_network(2, 3, 1, layer_factory=dl.create_layer_seq)
         x = np.array([
             [1],
             [-1]
@@ -112,7 +112,7 @@ class TestBackward(unittest.TestCase):
         #         | 0 2|                             D
         #         | 1 3|                            | 0 10|
 
-        w, b = dl.create_network(2, 3, 1, create_layer=dl.create_seq_layer)
+        w, b = dl.create_network(2, 3, 1, layer_factory=dl.create_layer_seq)
         x = np.array([
             [ 1,-1],
             [-1,1]
@@ -160,7 +160,7 @@ class TestBackward(unittest.TestCase):
         """
         複数データを繰り返しパラメータ調整を行うことで、誤差が小さくなることを検証します
         """
-        w, b = dl.create_network(2, 3, 1, create_layer=dl.create_seq_layer)
+        w, b = dl.create_network(2, 3, 1, layer_factory=dl.create_layer_seq)
         x = np.array([
             [ 1,-1],
             [-1,1]
