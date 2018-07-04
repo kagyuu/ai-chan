@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import numpy.testing as npt
-from ai_chan import dl
+from ai_chan import layer_initializer
 from ai_chan import math
 
 
@@ -14,12 +14,12 @@ class TestForward(unittest.TestCase):
         # L0:None(添え字を層番号と揃えるためのダミー)
         # L1:in 2→ out 3
         # L2:in 3→ out 1
-        w, b = dl.create_network(2, 3, 1, layer_factory=dl.create_layer_seq)
+        w, b = layer_initializer.create_network(2, 3, 1, layer_factory=layer_initializer.create_layer_seq)
         x = np.array([
             [1],
             [-1]
         ])
-        u, z, y = dl.forward(x, w, b, math.relu, math.identity_mapping)
+        u, z, y = layer_initializer.forward(x, w, b, math.relu, math.identity_mapping)
 
         # L0 : u[0] は None、z[0] は 入力X
         self.assertIsNone(u[0])
@@ -68,12 +68,12 @@ class TestForward(unittest.TestCase):
         # L0:None(添え字を層番号と揃えるためのダミー)
         # L1:in 2→ out 3
         # L2:in 3→ out 1
-        w, b = dl.create_network(2, 3, 1, layer_factory=dl.create_layer_seq)
+        w, b = layer_initializer.create_network(2, 3, 1, layer_factory=layer_initializer.create_layer_seq)
         x = np.array([
             [ 1, -1],
             [-1,  1]
         ])
-        u, z, y = dl.forward(x, w, b, math.relu, math.identity_mapping)
+        u, z, y = layer_initializer.forward(x, w, b, math.relu, math.identity_mapping)
 
         # L0 : u[0] は None、z[0] は 入力X
         self.assertIsNone(u[0])

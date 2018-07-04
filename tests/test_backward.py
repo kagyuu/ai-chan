@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import numpy.testing as npt
-from ai_chan import dl
+from ai_chan import layer_initializer
 from ai_chan import math
 
 
@@ -22,15 +22,15 @@ class TestBackward(unittest.TestCase):
         # |0 1 2| | 0| + |0| = | 2| - 恒等 -> | 2|
         #         | 0|                         D
         #         | 1|                        | 0|
-        w, b = dl.create_network(2, 3, 1, layer_factory=dl.create_layer_seq)
+        w, b = layer_initializer.create_network(2, 3, 1, layer_factory=layer_initializer.create_layer_seq)
         x = np.array([
             [1],
             [-1]
         ])
         d = np.array([[0]])
-        u, z, y = dl.forward(x, w, b, math.relu, math.identity_mapping)
+        u, z, y = layer_initializer.forward(x, w, b, math.relu, math.identity_mapping)
 
-        dEdW, dEdB = dl.backward(w, b, u, z, y-d, math.d_relu)
+        dEdW, dEdB = layer_initializer.backward(w, b, u, z, y - d, math.d_relu)
 
         # δ2 = Y - D = |2|
         #
@@ -70,7 +70,7 @@ class TestBackward(unittest.TestCase):
         """
         1データを繰り返しパラメータ調整を行うことで、誤差が小さくなることを検証します
         """
-        w, b = dl.create_network(2, 3, 1, layer_factory=dl.create_layer_seq)
+        w, b = layer_initializer.create_network(2, 3, 1, layer_factory=layer_initializer.create_layer_seq)
         x = np.array([
             [1],
             [-1]
@@ -80,7 +80,7 @@ class TestBackward(unittest.TestCase):
         last_error = np.finfo(float).max
         for cnt in range(0, 10):
             # 順伝搬
-            u, z, y = dl.forward(x, w, b, math.relu, math.identity_mapping)
+            u, z, y = layer_initializer.forward(x, w, b, math.relu, math.identity_mapping)
 
             # 誤差評価 (前回より誤差が小さくなることを確認する)
             error =  math.least_square(d, y)
@@ -89,9 +89,9 @@ class TestBackward(unittest.TestCase):
             last_error = error
 
             # 逆伝搬
-            dEdW, dEdB = dl.backward(w, b, u, z, y-d, math.d_relu)
+            dEdW, dEdB = layer_initializer.backward(w, b, u, z, y - d, math.d_relu)
             # パラメータ修正
-            w, b = dl.adjust_network(w, b, dEdW, dEdB)
+            w, b = layer_initializer.adjust_network(w, b, dEdW, dEdB)
 
         # print(w)
         # print(b)
@@ -112,15 +112,15 @@ class TestBackward(unittest.TestCase):
         #         | 0 2|                             D
         #         | 1 3|                            | 0 10|
 
-        w, b = dl.create_network(2, 3, 1, layer_factory=dl.create_layer_seq)
+        w, b = layer_initializer.create_network(2, 3, 1, layer_factory=layer_initializer.create_layer_seq)
         x = np.array([
             [ 1,-1],
             [-1,1]
         ])
         d = np.array([[0, 10]])
-        u, z, y = dl.forward(x, w, b, math.relu, math.identity_mapping)
+        u, z, y = layer_initializer.forward(x, w, b, math.relu, math.identity_mapping)
 
-        dEdW, dEdB = dl.backward(w, b, u, z, y-d, math.d_relu)
+        dEdW, dEdB = layer_initializer.backward(w, b, u, z, y - d, math.d_relu)
 
         # δ2 = Y - D = |2 -2|
         #
@@ -160,7 +160,7 @@ class TestBackward(unittest.TestCase):
         """
         複数データを繰り返しパラメータ調整を行うことで、誤差が小さくなることを検証します
         """
-        w, b = dl.create_network(2, 3, 1, layer_factory=dl.create_layer_seq)
+        w, b = layer_initializer.create_network(2, 3, 1, layer_factory=layer_initializer.create_layer_seq)
         x = np.array([
             [ 1,-1],
             [-1,1]
@@ -170,7 +170,7 @@ class TestBackward(unittest.TestCase):
         last_error = np.finfo(float).max
         for cnt in range(0, 10):
             # 順伝搬
-            u, z, y = dl.forward(x, w, b, math.relu, math.identity_mapping)
+            u, z, y = layer_initializer.forward(x, w, b, math.relu, math.identity_mapping)
 
             # 誤差評価 (前回より誤差が小さくなることを確認する)
             error =  math.least_square(d, y)
@@ -179,9 +179,9 @@ class TestBackward(unittest.TestCase):
             last_error = error
 
             # 逆伝搬
-            dEdW, dEdB = dl.backward(w, b, u, z, y-d, math.d_relu)
+            dEdW, dEdB = layer_initializer.backward(w, b, u, z, y - d, math.d_relu)
             # パラメータ修正
-            w, b = dl.adjust_network(w, b, dEdW, dEdB)
+            w, b = layer_initializer.adjust_network(w, b, dEdW, dEdB)
 
         # print(w)
         # print(b)

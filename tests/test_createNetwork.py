@@ -1,6 +1,6 @@
 import unittest
 import numpy.testing as npt
-from ai_chan import dl
+from ai_chan import layer_initializer
 
 
 class TestCreateNetwork(unittest.TestCase):
@@ -13,7 +13,7 @@ class TestCreateNetwork(unittest.TestCase):
         # L1:in 3→ out 4
         # L2:in 4→ out 5
         # L3:in 5→ out 1
-        w, b = dl.create_network(3, 4, 5, 1)
+        w, b = layer_initializer.create_network(3, 4, 5, 1)
 
         self.assertEqual(4, len(w))
         self.assertEqual(4, len(b))
@@ -41,7 +41,7 @@ class TestCreateNetwork(unittest.TestCase):
         # L0:None(添え字を層番号と揃えるためのダミー)
         # L1:in 2→ out 3
         # L2:in 3→ out 1
-        w, b = dl.create_network(2, 3, 1, layer_factory=dl.create_layer_seq)
+        w, b = layer_initializer.create_network(2, 3, 1, layer_factory=layer_initializer.create_layer_seq)
 
         self.assertEqual(3, len(w))
         self.assertEqual(3, len(b))
