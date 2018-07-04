@@ -4,6 +4,10 @@ import numpy.testing as npt
 from ai_chan import layer_initializer
 from ai_chan import math
 
+# TODO: fix it
+# I can access private variables as follwings:
+# obj = Sample()
+# obj._Sample.__val
 
 class TestForward(unittest.TestCase):
 

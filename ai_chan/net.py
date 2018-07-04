@@ -11,13 +11,13 @@ class AbstractNet(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def add_pre_layer(self, layer_initializer, x=None, y=None):
+    def add_pre_layer(self, layer_initializer, x, y):
         """
         ニューラルネットワークに (初期状態で) 統計的な前処理を行うレイヤを追加します.
         活性化関数は恒等写像になります.
         :param layer_initializer: レイヤを初期化する関数
-        :param x: 入力データ (省略時 None)
-        :param y: 教師値 (省略時 None)
+        :param x: 入力データ
+        :param y: 教師値
         :return:x をこのレイヤで処理した結果
         """
         pass
@@ -84,7 +84,7 @@ class SimpleNet(AbstractNet):
     # バイアス (配列添え字と、一般的な教科書と層番号を合わせるため 第0層 にNoneを設定)
     __b = [None]
     # 活性化関数 (配列添え字と、一般的な教科書と層番号を合わせるため 第0層 にNoneを設定)
-    __f : [af.AbstractActivateFunction] = [None]
+    __f: [af.AbstractActivateFunction] = [None]
     # 学習率
     __learning_rate_keeper = lr.StaticRate()
     # 順伝搬時のuの記録用リスト (逆伝搬で使う)
@@ -97,6 +97,7 @@ class SimpleNet(AbstractNet):
         self.__w.append(w)
         self.__b.append(b)
         self.__f.append(af.IdentityMapping())
+        return x2
 
     def add_mid_layer(self, *units, layer_initializer = li.init_he_layer, activate_function = af.ReLu()):
         """
@@ -112,7 +113,7 @@ class SimpleNet(AbstractNet):
             self.__b.append(b)
             self.__f.append(activate_function)
 
-    def add_out_layer(self, units, layer_initializer =li.init_random_layer, activate_function = af.IdentityMapping()):
+    def add_out_layer(self, units, layer_initializer = li.init_random_layer, activate_function = af.IdentityMapping()):
         """
         :type activate_function: af.AbstractActivateFunction
         """
