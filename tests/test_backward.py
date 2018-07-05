@@ -1,8 +1,9 @@
 import unittest
 import numpy as np
 import numpy.testing as npt
-from ai_chan import layer_initializer
-from ai_chan import math
+from ai_chan import neural_net as nn
+from ai_chan import layer_initializer as li
+from ai_chan import util
 
 
 class TestBackward(unittest.TestCase):
@@ -22,15 +23,19 @@ class TestBackward(unittest.TestCase):
         # |0 1 2| | 0| + |0| = | 2| - 恒等 -> | 2|
         #         | 0|                         D
         #         | 1|                        | 0|
-        w, b = layer_initializer.create_network(2, 3, 1, layer_factory=layer_initializer.create_layer_seq)
+        net = nn.SimpleNet()
+        net.add_mid_layer(2, 3, layer_initializer=li.init_seq_layer)
+        net.add_out_layer(1, layer_initializer=li.init_seq_layer)
+
         x = np.array([
             [1],
             [-1]
         ])
         d = np.array([[0]])
-        u, z, y = layer_initializer.forward(x, w, b, math.relu, math.identity_mapping)
 
-        dEdW, dEdB = layer_initializer.backward(w, b, u, z, y - d, math.d_relu)
+        y = net.forward(x)
+
+        dEdW, dEdB = net.backward(d, y)
 
         # δ2 = Y - D = |2|
         #
@@ -70,7 +75,10 @@ class TestBackward(unittest.TestCase):
         """
         1データを繰り返しパラメータ調整を行うことで、誤差が小さくなることを検証します
         """
-        w, b = layer_initializer.create_network(2, 3, 1, layer_factory=layer_initializer.create_layer_seq)
+        net = nn.SimpleNet()
+        net.add_mid_layer(2, 3, layer_initializer=li.init_seq_layer)
+        net.add_out_layer(1, layer_initializer=li.init_seq_layer)
+
         x = np.array([
             [1],
             [-1]
@@ -80,21 +88,18 @@ class TestBackward(unittest.TestCase):
         last_error = np.finfo(float).max
         for cnt in range(0, 10):
             # 順伝搬
-            u, z, y = layer_initializer.forward(x, w, b, math.relu, math.identity_mapping)
+            y = net.forward(x)
 
             # 誤差評価 (前回より誤差が小さくなることを確認する)
-            error =  math.least_square(d, y)
-            # print("LOOP={} ERROR={}".format(cnt,error))
+            error = util.least_square(d, y)
+            # util.debug("LOOP={} ERROR={}", cnt, error)
             self.assertLess(error, last_error)
             last_error = error
 
             # 逆伝搬
-            dEdW, dEdB = layer_initializer.backward(w, b, u, z, y - d, math.d_relu)
+            dEdW, dEdB = net.backward(d, y)
             # パラメータ修正
-            w, b = layer_initializer.adjust_network(w, b, dEdW, dEdB)
-
-        # print(w)
-        # print(b)
+            net.adjust_network(dEdW,dEdB)
 
     def test_backward_MultiBatch(self):
         """
@@ -112,15 +117,18 @@ class TestBackward(unittest.TestCase):
         #         | 0 2|                             D
         #         | 1 3|                            | 0 10|
 
-        w, b = layer_initializer.create_network(2, 3, 1, layer_factory=layer_initializer.create_layer_seq)
+        net = nn.SimpleNet()
+        net.add_mid_layer(2, 3, layer_initializer=li.init_seq_layer)
+        net.add_out_layer(1, layer_initializer=li.init_seq_layer)
+
         x = np.array([
             [ 1,-1],
             [-1,1]
         ])
         d = np.array([[0, 10]])
-        u, z, y = layer_initializer.forward(x, w, b, math.relu, math.identity_mapping)
+        y = net.forward(x)
 
-        dEdW, dEdB = layer_initializer.backward(w, b, u, z, y - d, math.d_relu)
+        dEdW, dEdB = net.backward(d, y)
 
         # δ2 = Y - D = |2 -2|
         #
@@ -160,7 +168,10 @@ class TestBackward(unittest.TestCase):
         """
         複数データを繰り返しパラメータ調整を行うことで、誤差が小さくなることを検証します
         """
-        w, b = layer_initializer.create_network(2, 3, 1, layer_factory=layer_initializer.create_layer_seq)
+        net = nn.SimpleNet()
+        net.add_mid_layer(2, 3, layer_initializer=li.init_seq_layer)
+        net.add_out_layer(1, layer_initializer=li.init_seq_layer)
+
         x = np.array([
             [ 1,-1],
             [-1,1]
@@ -170,20 +181,19 @@ class TestBackward(unittest.TestCase):
         last_error = np.finfo(float).max
         for cnt in range(0, 10):
             # 順伝搬
-            u, z, y = layer_initializer.forward(x, w, b, math.relu, math.identity_mapping)
+            y = net.forward(x)
 
             # 誤差評価 (前回より誤差が小さくなることを確認する)
-            error =  math.least_square(d, y)
-            # print("LOOP={} ERROR={}".format(cnt,error))
+            error = util.least_square(d, y)
+            # util.debug("LOOP={} ERROR={}", cnt, error)
             self.assertLess(error, last_error)
             last_error = error
 
             # 逆伝搬
-            dEdW, dEdB = layer_initializer.backward(w, b, u, z, y - d, math.d_relu)
+            dEdW, dEdB = net.backward(d, y)
             # パラメータ修正
-            w, b = layer_initializer.adjust_network(w, b, dEdW, dEdB)
+            net.adjust_network(dEdW,dEdB)
 
-        # print(w)
-        # print(b)
+
 if __name__ == '__main__':
     unittest.main()

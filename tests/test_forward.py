@@ -1,13 +1,9 @@
 import unittest
 import numpy as np
 import numpy.testing as npt
-from ai_chan import layer_initializer
-from ai_chan import math
+from ai_chan import neural_net as nn
+from ai_chan import layer_initializer as li
 
-# TODO: fix it
-# I can access private variables as follwings:
-# obj = Sample()
-# obj._Sample.__val
 
 class TestForward(unittest.TestCase):
 
@@ -18,19 +14,23 @@ class TestForward(unittest.TestCase):
         # L0:None(添え字を層番号と揃えるためのダミー)
         # L1:in 2→ out 3
         # L2:in 3→ out 1
-        w, b = layer_initializer.create_network(2, 3, 1, layer_factory=layer_initializer.create_layer_seq)
+        net = nn.SimpleNet()
+        net.add_mid_layer(2, 3, layer_initializer=li.init_seq_layer)
+        net.add_out_layer(1, layer_initializer=li.init_seq_layer)
+
         x = np.array([
             [1],
             [-1]
         ])
-        u, z, y = layer_initializer.forward(x, w, b, math.relu, math.identity_mapping)
+
+        y = net.forward(x)
 
         # L0 : u[0] は None、z[0] は 入力X
-        self.assertIsNone(u[0])
+        self.assertIsNone(net.u_memento[0])
         npt.assert_array_equal([
             [1],
             [-1]
-        ], z[0])
+        ], net.z_memento[0])
 
         # L1
         #  W1    Z0=X   B1    U1             Z1
@@ -41,12 +41,12 @@ class TestForward(unittest.TestCase):
             [-1],
             [0],
             [1]
-        ], u[1])
+        ], net.u_memento[1])
         npt.assert_array_equal([
             [0],
             [0],
             [1]
-        ], z[1])
+        ], net.z_memento[1])
 
         # L2
         #  W2       Z1    B2    U2             Z2=Y
@@ -55,10 +55,10 @@ class TestForward(unittest.TestCase):
         #         | 1|
         npt.assert_array_equal([
             [2]
-        ], u[2])
+        ], net.u_memento[2])
         npt.assert_array_equal([
             [2]
-        ], z[2])
+        ], net.z_memento[2])
 
         # Y
         npt.assert_array_equal([
@@ -72,19 +72,23 @@ class TestForward(unittest.TestCase):
         # L0:None(添え字を層番号と揃えるためのダミー)
         # L1:in 2→ out 3
         # L2:in 3→ out 1
-        w, b = layer_initializer.create_network(2, 3, 1, layer_factory=layer_initializer.create_layer_seq)
+        net = nn.SimpleNet()
+        net.add_mid_layer(2, 3, layer_initializer=li.init_seq_layer)
+        net.add_out_layer(1, layer_initializer=li.init_seq_layer)
+
         x = np.array([
             [ 1, -1],
             [-1,  1]
         ])
-        u, z, y = layer_initializer.forward(x, w, b, math.relu, math.identity_mapping)
+
+        y = net.forward(x)
 
         # L0 : u[0] は None、z[0] は 入力X
-        self.assertIsNone(u[0])
+        self.assertIsNone(net.u_memento[0])
         npt.assert_array_equal([
             [ 1, -1],
             [-1,  1]
-        ], z[0])
+        ], net.z_memento[0])
 
         # L1
         #  W1    Z0=X       B1      U1               Z1
@@ -95,12 +99,12 @@ class TestForward(unittest.TestCase):
             [-1, 1],
             [ 0, 2],
             [ 1, 3]
-        ], u[1])
+        ], net.u_memento[1])
         npt.assert_array_equal([
             [0, 1],
             [0, 2],
             [1, 3]
-        ], z[1])
+        ], net.z_memento[1])
 
         # L2
         #  W2        Z1    B2        U2             Z2=Y
@@ -109,10 +113,10 @@ class TestForward(unittest.TestCase):
         #         | 1 3|
         npt.assert_array_equal([
             [2, 8]
-        ], u[2])
+        ], net.u_memento[2])
         npt.assert_array_equal([
             [2, 8]
-        ], z[2])
+        ], net.z_memento[2])
 
         # Y
         npt.assert_array_equal([
