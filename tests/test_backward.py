@@ -1,8 +1,8 @@
 import unittest
 import numpy as np
 import numpy.testing as npt
-from ai_chan import neural_net as nn
-from ai_chan import layer_initializer as li
+from ai_chan import nnet
+from ai_chan import layer
 from ai_chan import util
 
 
@@ -23,9 +23,9 @@ class TestBackward(unittest.TestCase):
         # |0 1 2| | 0| + |0| = | 2| - 恒等 -> | 2|
         #         | 0|                         D
         #         | 1|                        | 0|
-        net = nn.SimpleNet()
-        net.add_mid_layer(2, 3, layer_initializer=li.init_seq_layer)
-        net.add_out_layer(1, layer_initializer=li.init_seq_layer)
+        net = nnet.SimpleNet()
+        net.add_mid_layer(2, 3, layer_factory=layer.Seq())
+        net.add_out_layer(1, layer_factory=layer.Seq())
 
         x = np.array([
             [1],
@@ -75,9 +75,9 @@ class TestBackward(unittest.TestCase):
         """
         1データを繰り返しパラメータ調整を行うことで、誤差が小さくなることを検証します
         """
-        net = nn.SimpleNet()
-        net.add_mid_layer(2, 3, layer_initializer=li.init_seq_layer)
-        net.add_out_layer(1, layer_initializer=li.init_seq_layer)
+        net = nnet.SimpleNet()
+        net.add_mid_layer(2, 3, layer_factory=layer.Seq())
+        net.add_out_layer(1, layer_factory=layer.Seq())
 
         x = np.array([
             [1],
@@ -91,7 +91,7 @@ class TestBackward(unittest.TestCase):
             y = net.forward(x)
 
             # 誤差評価 (前回より誤差が小さくなることを確認する)
-            error = util.least_square(d, y)
+            error = util.least_square_average(d, y)
             # util.debug("LOOP={} ERROR={}", cnt, error)
             self.assertLess(error, last_error)
             last_error = error
@@ -117,9 +117,9 @@ class TestBackward(unittest.TestCase):
         #         | 0 2|                             D
         #         | 1 3|                            | 0 10|
 
-        net = nn.SimpleNet()
-        net.add_mid_layer(2, 3, layer_initializer=li.init_seq_layer)
-        net.add_out_layer(1, layer_initializer=li.init_seq_layer)
+        net = nnet.SimpleNet()
+        net.add_mid_layer(2, 3, layer_factory=layer.Seq())
+        net.add_out_layer(1, layer_factory=layer.Seq())
 
         x = np.array([
             [ 1,-1],
@@ -168,9 +168,9 @@ class TestBackward(unittest.TestCase):
         """
         複数データを繰り返しパラメータ調整を行うことで、誤差が小さくなることを検証します
         """
-        net = nn.SimpleNet()
-        net.add_mid_layer(2, 3, layer_initializer=li.init_seq_layer)
-        net.add_out_layer(1, layer_initializer=li.init_seq_layer)
+        net = nnet.SimpleNet()
+        net.add_mid_layer(2, 3, layer_factory=layer.Seq())
+        net.add_out_layer(1, layer_factory=layer.Seq())
 
         x = np.array([
             [ 1,-1],
@@ -184,7 +184,7 @@ class TestBackward(unittest.TestCase):
             y = net.forward(x)
 
             # 誤差評価 (前回より誤差が小さくなることを確認する)
-            error = util.least_square(d, y)
+            error = util.least_square_average(d, y)
             # util.debug("LOOP={} ERROR={}", cnt, error)
             self.assertLess(error, last_error)
             last_error = error

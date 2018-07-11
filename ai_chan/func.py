@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 import numpy as np
 
 
-class AbstractActivateFunction(metaclass=ABCMeta):
+class ActivateFunction(metaclass=ABCMeta):
     """
     活性化関数の抽象クラス.
     """
@@ -35,7 +35,7 @@ class AbstractActivateFunction(metaclass=ABCMeta):
         pass
 
 
-class IdentityMapping(AbstractActivateFunction):
+class IdentityMapping(ActivateFunction):
     """
     恒等写像
     """
@@ -52,7 +52,7 @@ class IdentityMapping(AbstractActivateFunction):
         return "恒等写像(Identity Mapping)"
 
 
-class Sigmoid(AbstractActivateFunction):
+class Sigmoid(ActivateFunction):
     """
     シグモイド関数
     """
@@ -60,7 +60,8 @@ class Sigmoid(AbstractActivateFunction):
         return 1.0 / (1.0 + np.exp(-1.0 * x))
 
     def differential(self, x):
-        return (1.0 - self.calc(x)) * self.calc(x)
+        s = self.calc(x)
+        return (1.0 - s) * s
 
     def delta(self, d,y):
         return d - y
@@ -69,7 +70,7 @@ class Sigmoid(AbstractActivateFunction):
         return "Sigmoid"
 
 
-class Tanh(AbstractActivateFunction):
+class Tanh(ActivateFunction):
     """
     双曲線正接関数(tanh)
     """
@@ -78,22 +79,21 @@ class Tanh(AbstractActivateFunction):
         return np.tanh(x)
 
     def differential(self, x):
-        return 4.0 / np.power((np.exp(x) + np.exp(-1.0 * x)), 2)
+        #return 4.0 / np.power((np.exp(x) + np.exp(-1.0 * x)), 2)
+        return 1.0 / (np.cosh(x) ** 2)
 
     def delta(self, d,y):
-        # TODO: I think it may be correct. But I have to re-caluculate it!
         return d - y
 
     def name(self):
         return "双曲線正接関数(tanh)"
 
 
-class ReLu(AbstractActivateFunction):
+class ReLu(ActivateFunction):
     """
     Rectified Linear Unit (正規化線形関数)
     """
     def calc(self, x):
-        # return (np.exp(x) - np.exp(-1.0 * x)) / (np.exp(x) + np.exp(-1.0 * x))
         return np.maximum(0, x)
 
     def differential(self, x):

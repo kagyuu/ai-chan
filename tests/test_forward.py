@@ -1,8 +1,8 @@
 import unittest
 import numpy as np
 import numpy.testing as npt
-from ai_chan import neural_net as nn
-from ai_chan import layer_initializer as li
+from ai_chan import nnet
+from ai_chan import layer
 
 
 class TestForward(unittest.TestCase):
@@ -14,9 +14,9 @@ class TestForward(unittest.TestCase):
         # L0:None(添え字を層番号と揃えるためのダミー)
         # L1:in 2→ out 3
         # L2:in 3→ out 1
-        net = nn.SimpleNet()
-        net.add_mid_layer(2, 3, layer_initializer=li.init_seq_layer)
-        net.add_out_layer(1, layer_initializer=li.init_seq_layer)
+        net = nnet.SimpleNet()
+        net.add_mid_layer(2, 3, layer_factory=layer.Seq())
+        net.add_out_layer(1, layer_factory=layer.Seq())
 
         x = np.array([
             [1],
@@ -72,9 +72,9 @@ class TestForward(unittest.TestCase):
         # L0:None(添え字を層番号と揃えるためのダミー)
         # L1:in 2→ out 3
         # L2:in 3→ out 1
-        net = nn.SimpleNet()
-        net.add_mid_layer(2, 3, layer_initializer=li.init_seq_layer)
-        net.add_out_layer(1, layer_initializer=li.init_seq_layer)
+        net = nnet.SimpleNet()
+        net.add_mid_layer(2, 3, layer_factory=layer.Seq())
+        net.add_out_layer(1, layer_factory=layer.Seq())
 
         x = np.array([
             [ 1, -1],

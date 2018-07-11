@@ -1,7 +1,7 @@
 import unittest
 import numpy.testing as npt
-from ai_chan import neural_net as nn
-from ai_chan import layer_initializer as li
+from ai_chan import nnet
+from ai_chan import layer
 
 
 class TestCreateNetwork(unittest.TestCase):
@@ -14,7 +14,7 @@ class TestCreateNetwork(unittest.TestCase):
         # L1:in 3→ out 4
         # L2:in 4→ out 5
         # L3:in 5→ out 1
-        net = nn.SimpleNet()
+        net = nnet.SimpleNet()
         net.add_mid_layer(3, 4, 5)
         net.add_out_layer(1)
 
@@ -44,9 +44,9 @@ class TestCreateNetwork(unittest.TestCase):
         # L0:None(添え字を層番号と揃えるためのダミー)
         # L1:in 2→ out 3
         # L2:in 3→ out 1
-        net = nn.SimpleNet()
-        net.add_mid_layer(2, 3, layer_initializer=li.init_seq_layer)
-        net.add_out_layer(1, layer_initializer=li.init_seq_layer)
+        net = nnet.SimpleNet()
+        net.add_mid_layer(2, 3, layer_factory=layer.Seq())
+        net.add_out_layer(1, layer_factory=layer.Seq())
 
         self.assertEqual(3, len(net.w))
         self.assertEqual(3, len(net.b))

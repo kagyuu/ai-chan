@@ -1,8 +1,8 @@
 from abc import ABCMeta, abstractmethod
 import numpy as np
-from ai_chan import activate_function as af
-from ai_chan import learning_rate as lr
-from ai_chan import layer_initializer as li
+from ai_chan import func
+from ai_chan import grad
+from ai_chan import layer
 
 
 class AbstractNet(metaclass=ABCMeta):
@@ -17,55 +17,55 @@ class AbstractNet(metaclass=ABCMeta):
         w 重み行列 (配列添え字と、一般的な教科書と層番号を合わせるため 第0層 にNoneを設定)
         b バイアス (配列添え字と、一般的な教科書と層番号を合わせるため 第0層 にNoneを設定)
         f 活性化関数 (配列添え字と、一般的な教科書と層番号を合わせるため 第0層 にNoneを設定)
-        learning_rate_keeper 学習率 (初期値は、学習率0.001固定)
+        learning_rate 学習率 (初期値は、学習率0.001固定)
         u_memento 順伝搬時のuの記録用リスト (逆伝搬で使う)
         z_memento 順伝搬時のzの記録用リスト (逆伝搬で使う)
         """
         self.w = [None]
         self.b = [None]
-        self.f: [af.AbstractActivateFunction] = [None]
-        self.learning_rate_keeper = lr.StaticRate()
+        self.f: [func.ActivateFunction] = [None]
+        self.g = grad.Static()
         self.u_memento = []
         self.z_memento = []
 
     @abstractmethod
-    def add_pre_layer(self, layer_initializer, x, y):
+    def add_pre_layer(self, layer_factory, activate_function, x, y):
         """
         ニューラルネットワークに (初期状態で) 統計的な前処理を行うレイヤを追加します.
-        活性化関数は恒等写像になります.
-        :param layer_initializer: レイヤを初期化する関数
+        活性化関数はシグモイド関数になります.
+        :param layer_factory: レイヤを初期化する関数
+        :param activate_function: 活性化関数
         :param x: 入力データ
         :param y: 教師値
-        :return:x をこのレイヤで処理した結果
         """
         pass
 
     @abstractmethod
-    def add_mid_layer(self, *units, layer_initializer, activate_function):
+    def add_mid_layer(self, *units, layer_factory, activate_function):
         """
         ニューラルネットワークに 中間層を追加します
         :param *units: 中間層のサイズを可変引数で指定します
-        :param layer_initializer: レイヤを初期化する関数
+        :param layer_factory: レイヤを初期化する関数
         :param activate_function: 活性化関数
         """
         pass
 
     @abstractmethod
-    def add_out_layer(self, units, layer_initializer, activate_function):
+    def add_out_layer(self, units, layer_factory, activate_function):
         """
-        ニューラルネットわw−国出力層を追加します
+        ニューラルネットワークに 出力層を追加します
         :param units: 出力ユニットのサイズを指定します
-        :param layer_initializer: レイヤを初期化する関数 (省略時:He)
+        :param layer_factory: レイヤを初期化する関数 (省略時:He)
         :param activate_function: 活性化関数 (省略時:恒等写像)
         :return:
         """
         pass
 
     @abstractmethod
-    def set_learning_rate(self, lr_keeper):
+    def set_learning_rate(self, g):
         """
         学習係数の管理を行うクラスを登録します
-        :param lr_keeper: 学習計数管理クラス
+        :param g: 学習計数管理クラス
         """
         pass
 
@@ -97,49 +97,45 @@ class AbstractNet(metaclass=ABCMeta):
 
 class SimpleNet(AbstractNet):
 
-    def add_pre_layer(self, layer_initializer, x=None, y=None):
-        w, b, x2 = layer_initializer(x, y)
+    def add_pre_layer(self, layer_factory, activate_function=func.Sigmoid(), x=None, y=None):
+        w, b = layer_factory.create(x, y)
         self.w.append(w)
         self.b.append(b)
-        self.f.append(af.IdentityMapping())
-        return x2
+        self.f.append(activate_function)
 
-    def add_mid_layer(self, *units, layer_initializer = li.init_he_layer, activate_function = af.ReLu()):
-        """
-        :type activate_function: af.AbstractActivateFunction
-        """
+    def add_mid_layer(self, *units, layer_factory=layer.He(), activate_function=func.ReLu()):
         for layer in range(0, len(units) - 1):
             in_size = units[layer]
             out_size = units[layer + 1]
 
-            w, b = layer_initializer(in_size, out_size)
+            w, b = layer_factory.create(in_size, out_size)
 
             self.w.append(w)
             self.b.append(b)
             self.f.append(activate_function)
 
-    def add_out_layer(self, units, layer_initializer = li.init_random_layer, activate_function = af.IdentityMapping()):
+    def add_out_layer(self, units, layer_factory=layer.Random(), activate_function=func.IdentityMapping()):
         """
         :type activate_function: af.AbstractActivateFunction
         """
         in_size = self.b[-1].shape[0]
         out_size = units
 
-        w, b = layer_initializer(in_size, out_size)
+        w, b = layer_factory.create(in_size, out_size)
         self.w.append(w)
         self.b.append(b)
         self.f.append(activate_function)
 
-    def set_learning_rate(self, lr_keeper: lr.AbstractLearningRate):
-        self.learning_rate_keeper = lr_keeper
+    def set_learning_rate(self, g):
+        self.g = g
 
     def forward(self, x):
         """
          順伝搬します.
          z(0) = x
          for l = 1 to L {
-         u(l) = W(l) ・ z(l-1) + b(l)
-         z(l) = func1( u(l) )
+           u(l) = W(l) ・ z(l-1) + b(l)
+           z(l) = func1( u(l) )
          }
          y = func2 ( z(L) )
         :param x: 入力データ　(複数のデータを同時に投入できる)
@@ -183,10 +179,10 @@ class SimpleNet(AbstractNet):
         # delta の列数が、バッチサイズ
         batch_size = delta.shape[1]
 
-        for layer in range(len(self.w) - 1, 0, -1):
+        for l in range(len(self.w) - 1, 0, -1):
             # dEdW = δ[l] (z[l-1].T) の各要素をバッチサイズで割ったもの
             # dEdB = δ[l] の各行平均
-            dEdW.append(np.dot(delta, self.z_memento[layer - 1].T) / batch_size)
+            dEdW.append(np.dot(delta, self.z_memento[l - 1].T) / batch_size)
             dEdB.append(np.array([np.mean(delta, axis=1)]).T)
             # ※ delta は参照(pointer)なので、通常 delta を変えつつ list に
             # ※ 追記する場合には list.append(copy.deepcopy(delta)) する必要あり
@@ -196,8 +192,8 @@ class SimpleNet(AbstractNet):
             # 誤差逆伝搬 δ[l-1] = δ[l] W[l] f'(u[l-1])
             # layer=1 のとき、次は 入力層(layer=0) なので、もう逆伝搬する
             # 必要ない (実装上は u[0] が None なのでエラーになる)
-            if layer > 1:
-                delta = self.f[layer-1].differential(self.u_memento[layer - 1]) * np.dot(self.w[layer].T, delta)
+            if l > 1:
+                delta = self.f[l - 1].differential(self.u_memento[l  - 1]) * np.dot(self.w[l].T, delta)
 
         # 第0層(入力層)のダミー微分値
         dEdW.append(None)
@@ -211,13 +207,12 @@ class SimpleNet(AbstractNet):
 
     def adjust_network(self, dEdW, dEdB):
         # ネットワークの重みの調整
-        learning_rate = self.learning_rate_keeper.get_train_rate()
+        dW, dB = self.g.get_rate(dEdW, dEdB)
 
         for idx in range(1, len(self.w)):
             # 微分値が正 → Wijを大きくしたら誤差Eが大きくなるんでWijを少し小さくする
             # 微分値が負 → Wjiを大きくしたら誤差Eが小さくなるんでWijを少し大きくする
-            # 少し = 学習率 ここでは 微分値の 0.05 倍
-            self.w[idx] = self.w[idx] - learning_rate * dEdW[idx]
-            self.b[idx] = self.b[idx] - learning_rate * dEdB[idx]
+            self.w[idx] = self.w[idx] - dW[idx] * dEdW[idx]
+            self.b[idx] = self.b[idx] - dB[idx] * dEdB[idx]
 
 
