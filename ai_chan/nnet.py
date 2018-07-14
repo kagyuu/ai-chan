@@ -207,7 +207,7 @@ class SimpleNet(AbstractNet):
 
     def adjust_network(self, dEdW, dEdB):
         # ネットワークの重みの調整
-        dW, dB = self.g.get_rate(dEdW, dEdB)
+        dW, dB = self.g.eta(dEdW, dEdB)
 
         for idx in range(1, len(self.w)):
             # 微分値が正 → Wijを大きくしたら誤差Eが大きくなるんでWijを少し小さくする
