@@ -45,7 +45,7 @@ class IdentityMapping(ActivateFunction):
     def differential(self, x):
         return np.ones_like(x)
 
-    def delta(self, d,y):
+    def delta(self, d, y):
         return y - d
 
     def name(self):
@@ -63,8 +63,11 @@ class Sigmoid(ActivateFunction):
         s = self.calc(x)
         return (1.0 - s) * s
 
-    def delta(self, d,y):
-        return d - y
+    def delta(self, d, y):
+        # delta = ((y - d) / (y * (1 - y))) * self.differential(y)
+        # ここで、self.differential(y)が y * (1 - y) なため、
+        # 打ち消し合って delta = y-d
+        return y - d
 
     def name(self):
         return "Sigmoid"
@@ -79,11 +82,12 @@ class Tanh(ActivateFunction):
         return np.tanh(x)
 
     def differential(self, x):
-        #return 4.0 / np.power((np.exp(x) + np.exp(-1.0 * x)), 2)
+        # return 4.0 / np.power((np.exp(x) + np.exp(-1.0 * x)), 2)
         return 1.0 / (np.cosh(x) ** 2)
 
-    def delta(self, d,y):
-        return d - y
+    def delta(self, d, y):
+        # Tanh は、微分しても自分が出てこないので、Sigmoid のようにきれいな式にならない
+        return ((y - d) / (y * (1 - y))) * self.differential(y)
 
     def name(self):
         return "双曲線正接関数(tanh)"
@@ -99,7 +103,7 @@ class ReLu(ActivateFunction):
     def differential(self, x):
         return np.where(x > 0, 1, 0)
 
-    def delta(self, d,y):
+    def delta(self, d, y):
         return y - d
 
     def name(self):

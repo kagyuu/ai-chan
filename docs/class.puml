@@ -25,6 +25,7 @@ w [重み]
 b [バイアス]
 f [活性化関数]
 g 重み管理
+d 重み減衰
 u [forward時の各層の出力の記録]
 z [forward時の各層の出力の記録]
 drop_rate = 0.0
@@ -33,6 +34,7 @@ b_mask [ドロップアウト用マスク]
 add_pre_layer(layer_factory, activate_function, x, d)
 add_mid_layer([units], layer_factory, activate_function)
 add_post_layer(units, layer_factory, activate_function)
+set_weight_decay(weight_decay)
 drop_out(rate)
 drop_in()
 forward(x) : y
@@ -62,31 +64,47 @@ init()
 update(dWdE, dWdB)
 }
 
+interface WeightDecay {
+重み減衰
+..
+rW [重みの正則化ペナルティ]
+rB [バイアスの正則化ペナルティ]
+init()
+update(w,b)
+}
+
 HyperTrainer --> NetTrainer :use
 HyperTrainer ..> Net : initialize
 NetTrainer --> Net : use
 
 Net *-- ActivateFunction : has
 Net *-- Grad : has
+Net o-- WeightDecay : has
 Net --> LayerFactory : use
 
-Net <|.. CPUNet : 実装
-Net <|.. GPUNet : 実装 (将来構想)
+Net <|.. SimpleNet : 実装
 
-ActivateFunction <|.. Sigmoid : 実装
-ActivateFunction <|.. ReLu : 実装
-ActivateFunction <|.. Tanh : 実装
-ActivateFunction <|.. IdentityMapping : 実装
+ActivateFunction <|.. Sigmoid
+ActivateFunction <|.. ReLu
+ActivateFunction <|.. Tanh
+ActivateFunction <|.. IdentityMapping : 恒等写像
 
-LayerFactory <|.. Seq : 実装(動作確認用)
-LayerFactory <|.. Random : 実装
-LayerFactory <|.. Xavier : 実装
-LayerFactory <|.. He : 実装
-LayerFactory <|.. Normalize : 実装
+LayerFactory <|.. Seq : (動作確認用)
+LayerFactory <|.. Random
+LayerFactory <|.. Xavier
+LayerFactory <|.. He
+LayerFactory <|.. Normalize : 標準化スコア化
 
-Grad <|.. Static : 実装
-Grad <|.. Moment : 実装
-Grad <|.. AdGrad : 実装
-Grad <|.. Adam : 実装
+Grad <|.. Static : 0.001固定
+Grad <|.. Shrink : 0.001÷(学習回数+1)
+Grad <|.. Moment
+Grad <|.. AdGrad
+Grad <|.. Adam
+
+WeightDecay <|.. NoDecay
+WeightDecay <|.. L1Decay : L1
+WeightDecay <|.. L2Decay : L2
+WeightDecay <|.. LmaxDecay : L∞
+
 
 @enduml
