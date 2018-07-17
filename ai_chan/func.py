@@ -98,6 +98,7 @@ class ReLu(ActivateFunction):
     Rectified Linear Unit (正規化線形関数)
     """
     def calc(self, x):
+        # np.maximum( a, b ) means [max(a[0],b[0]), max(a[1], b[1]), max(a[2], b[2]),...]
         return np.maximum(0, x)
 
     def differential(self, x):

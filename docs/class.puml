@@ -58,17 +58,17 @@ delta(d,y)
 interface Grad {
 重み・バイアスの調整
 ..
-dW [重み学習率]
-dB [バイアス学習率]
+dw [重み学習率]
+db [バイアス学習率]
 init()
-update(dWdE, dWdB)
+eta(dWdE, dWdB)
 }
 
 interface WeightDecay {
 重み減衰
 ..
-rW [重みの正則化ペナルティ]
-rB [バイアスの正則化ペナルティ]
+rw [重みの正則化ペナルティ]
+rb [バイアスの正則化ペナルティ]
 init()
 update(w,b)
 }
@@ -88,6 +88,7 @@ ActivateFunction <|.. Sigmoid
 ActivateFunction <|.. ReLu
 ActivateFunction <|.. Tanh
 ActivateFunction <|.. IdentityMapping : 恒等写像
+ActivateFunction <|.. Softmax
 
 LayerFactory <|.. Seq : (動作確認用)
 LayerFactory <|.. Random

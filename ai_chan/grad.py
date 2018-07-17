@@ -22,20 +22,17 @@ class Static(Grad):
 
     def __init__(self, rate=0.001):
         self.rate = rate
-        self.dW = None
-        self.dB = None
 
     def eta(self, dEdW, dEdB):
-        if self.dW is None:
-            self.dW = [None]
-            self.dB = [None]
+        hw = [None]
+        hb = [None]
 
-            h = self.rate
-            for idx in range(1, len(dEdW)):
-                self.dW.append(h * np.ones_like(dEdW[idx]))
-                self.dB.append(h * np.ones_like(dEdB[idx]))
+        h = self.rate
+        for idx in range(1, len(dEdW)):
+            hw.append(h * np.ones_like(dEdW[idx]))
+            hb.append(h * np.ones_like(dEdB[idx]))
 
-        return self.dW, self.dB
+        return hw, hb
 
 
 class Shrink(Grad):
@@ -46,16 +43,15 @@ class Shrink(Grad):
     def __init__(self, rate=0.001):
         self.rate = rate
         self.cnt = 0.0
-        self.dW = None
-        self.dB = None
 
     def eta(self, dEdW, dEdB):
-        self.dW = [None]
-        self.dB = [None]
+        hw = [None]
+        hb = [None]
 
-        h = self.rate / (self.cnt + 1.0)
+        self.cnt += 1.0
+        h = self.rate / self.cnt # これは rate / (cnt+1)
         for idx in range(1, len(dEdW)):
-            self.dW.append(h * np.ones_like(dEdW[idx]))
-            self.dB.append(h * np.ones_like(dEdB[idx]))
+            hw.append(h * np.ones_like(dEdW[idx]))
+            hb.append(h * np.ones_like(dEdB[idx]))
 
-        return self.dW, self.dB
+        return hw, hb

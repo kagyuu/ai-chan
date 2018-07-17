@@ -3,6 +3,7 @@ import numpy as np
 from ai_chan import func
 from ai_chan import grad
 from ai_chan import layer
+from ai_chan import weight
 
 
 class AbstractNet(metaclass=ABCMeta):
@@ -20,6 +21,7 @@ class AbstractNet(metaclass=ABCMeta):
         learning_rate 学習率 (初期値は、学習率0.001固定)
         u_memento 順伝搬時のuの記録用リスト (逆伝搬で使う)
         z_memento 順伝搬時のzの記録用リスト (逆伝搬で使う)
+        d 重み減衰アルゴリズム (Weight Decay)
         """
         self.w = [None]
         self.b = [None]
@@ -27,6 +29,7 @@ class AbstractNet(metaclass=ABCMeta):
         self.g = grad.Static()
         self.u_memento = []
         self.z_memento = []
+        self.d = weight.NoDecay()
 
     @abstractmethod
     def add_pre_layer(self, layer_factory, activate_function, x, y):
@@ -66,6 +69,14 @@ class AbstractNet(metaclass=ABCMeta):
         """
         学習係数の管理を行うクラスを登録します
         :param g: 学習計数管理クラス
+        """
+        pass
+
+    @abstractmethod
+    def set_weight_decay(self, d):
+        """
+        重み減衰の管理を行うクラスを登録します
+        :param d: 重み減衰管理クラス
         """
         pass
 
@@ -129,6 +140,9 @@ class SimpleNet(AbstractNet):
     def set_learning_rate(self, g):
         self.g = g
 
+    def set_weight_decay(self, d):
+        self.d = d
+
     def forward(self, x):
         """
          順伝搬します.
@@ -184,16 +198,12 @@ class SimpleNet(AbstractNet):
             # dEdB = δ[l] の各行平均
             dEdW.append(np.dot(delta, self.z_memento[l - 1].T) / batch_size)
             dEdB.append(np.array([np.mean(delta, axis=1)]).T)
-            # ※ delta は参照(pointer)なので、通常 delta を変えつつ list に
-            # ※ 追記する場合には list.append(copy.deepcopy(delta)) する必要あり
-            # ※ 今回は下記の逆伝搬処理で delta が別のオブジェクトになるため
-            # ※ deepcopy は不要
 
             # 誤差逆伝搬 δ[l-1] = δ[l] W[l] f'(u[l-1])
             # layer=1 のとき、次は 入力層(layer=0) なので、もう逆伝搬する
             # 必要ない (実装上は u[0] が None なのでエラーになる)
             if l > 1:
-                delta = self.f[l - 1].differential(self.u_memento[l  - 1]) * np.dot(self.w[l].T, delta)
+                delta = self.f[l - 1].differential(self.u_memento[l - 1]) * np.dot(self.w[l].T, delta)
 
         # 第0層(入力層)のダミー微分値
         dEdW.append(None)
@@ -207,12 +217,16 @@ class SimpleNet(AbstractNet):
 
     def adjust_network(self, dEdW, dEdB):
         # ネットワークの重みの調整
-        dW, dB = self.g.eta(dEdW, dEdB)
+        hw, hb = self.g.eta(dEdW, dEdB)
+        dRdW, dRdB = self.d.r(self.w, self.b)
 
         for idx in range(1, len(self.w)):
             # 微分値が正 → Wijを大きくしたら誤差Eが大きくなるんでWijを少し小さくする
             # 微分値が負 → Wjiを大きくしたら誤差Eが小さくなるんでWijを少し大きくする
-            self.w[idx] = self.w[idx] - dW[idx] * dEdW[idx]
-            self.b[idx] = self.b[idx] - dB[idx] * dEdB[idx]
+            self.w[idx] = self.w[idx] - hw[idx] * (dEdW[idx] + dRdW[idx])
+            self.b[idx] = self.b[idx] - hb[idx] * (dEdB[idx] + dRdB[idx])
+            # 極大に発散するのを防ぐため重みの上限は 10e2
+            self.w[idx] = np.minimum(10e2, self.w[idx])
+            self.b[idx] = np.minimum(10e2, self.b[idx])
 
 
