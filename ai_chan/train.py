@@ -2,6 +2,7 @@ from ai_chan import nnet, util
 import numpy as np
 import sys
 
+
 class NetTrainer:
     """
     学習管理クラス
@@ -26,10 +27,10 @@ class NetTrainer:
         self.x = np.hsplit(x, divide)
         # 教師値データ
         self.d = np.hsplit(d, divide)
-        # ミニバッチ数
-        self.batch_size = divide - 1
+        # 訓練用ミニバッチ数
+        self.train_size = divide - 1
         # 評価用データの添字
-        self.eval_data = self.batch_size
+        self.eval_data = self.train_size
         # 重みのヒストグラム
         self.hist_w_start = None
         self.edge_w_start = None
@@ -67,7 +68,11 @@ class NetTrainer:
             error = util.least_square_average(self.d[self.eval_data], gy)
             self.ge.append(error)
 
-            current_batch = cnt % self.batch_size
+            # 最小エラー値の更新
+            min_error = min_error if min_error < error else error
+
+            # 今回の学習セット番号
+            current_batch = cnt % self.train_size
 
             # 順伝搬 (訓練用)
             y = self.nnet.forward(self.x[current_batch])
@@ -76,9 +81,6 @@ class NetTrainer:
             self.tx.append(cnt)
             error = util.least_square_average(self.d[current_batch], y)
             self.te.append(error)
-
-            # 最小エラー値の更新
-            min_error = min_error if min_error < error else error
 
             # 逆伝搬
             dEdW, dEdB = self.nnet.backward(self.d[current_batch], y)
@@ -94,3 +96,24 @@ class NetTrainer:
         self.edge_b_finish = bin_edges_b
 
         return min_error
+
+    def eval(self):
+        """
+        学習結果を返します.
+        :return d_train: 訓練データの教師値のlist
+        :return y_train: 訓練データの予測値のlist
+        :return d_eval: 評価用データの教師値
+        :return y_eval: 評価用データの予測値
+        """
+        d_train = []
+        y_train = []
+        for dataset in range(0, self.train_size):
+            d_train.append(self.d[dataset])
+            y_train.append(self.nnet.forward(self.x[dataset]))
+
+        d_eval = self.d[self.eval_data]
+        y_eval = self.nnet.forward(self.x[self.eval_data])
+
+        return d_train, y_train, d_eval, y_eval
+
+

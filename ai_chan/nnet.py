@@ -17,6 +17,7 @@ class AbstractNet(metaclass=ABCMeta):
         インスタンス変数
         w 重み行列 (配列添え字と、一般的な教科書と層番号を合わせるため 第0層 にNoneを設定)
         b バイアス (配列添え字と、一般的な教科書と層番号を合わせるため 第0層 にNoneを設定)
+        learning_flag W,b を更新するかのフラグ 1.0=学習する 0.0=学習しない
         f 活性化関数 (配列添え字と、一般的な教科書と層番号を合わせるため 第0層 にNoneを設定)
         learning_rate 学習率 (初期値は、学習率0.001固定)
         u_memento 順伝搬時のuの記録用リスト (逆伝搬で使う)
@@ -25,6 +26,7 @@ class AbstractNet(metaclass=ABCMeta):
         """
         self.w = [None]
         self.b = [None]
+        self.learning_flag = [None]
         self.f: [func.ActivateFunction] = [None]
         self.g = grad.Static()
         self.u_memento = []
@@ -32,7 +34,7 @@ class AbstractNet(metaclass=ABCMeta):
         self.d = weight.NoDecay()
 
     @abstractmethod
-    def add_pre_layer(self, layer_factory, activate_function, x, y):
+    def add_pre_layer(self, layer_factory, activate_function, x, y, fix_parameter):
         """
         ニューラルネットワークに (初期状態で) 統計的な前処理を行うレイヤを追加します.
         活性化関数はシグモイド関数になります.
@@ -40,27 +42,29 @@ class AbstractNet(metaclass=ABCMeta):
         :param activate_function: 活性化関数
         :param x: 入力データ
         :param y: 教師値
+        :param fix_parameter: この層の W,b を固定するかどうかのフラグ
         """
         pass
 
     @abstractmethod
-    def add_mid_layer(self, *units, layer_factory, activate_function):
+    def add_mid_layer(self, *units, layer_factory, activate_function, fix_parameter):
         """
         ニューラルネットワークに 中間層を追加します
         :param *units: 中間層のサイズを可変引数で指定します
         :param layer_factory: レイヤを初期化する関数
         :param activate_function: 活性化関数
+        :param fix_parameter: この層の W,b を固定するかどうかのフラグ
         """
         pass
 
     @abstractmethod
-    def add_out_layer(self, units, layer_factory, activate_function):
+    def add_out_layer(self, units, layer_factory, activate_function, fix_parameter):
         """
         ニューラルネットワークに 出力層を追加します
         :param units: 出力ユニットのサイズを指定します
         :param layer_factory: レイヤを初期化する関数 (省略時:He)
         :param activate_function: 活性化関数 (省略時:恒等写像)
-        :return:
+        :param fix_parameter: この層の W,b を固定するかどうかのフラグ
         """
         pass
 
@@ -108,13 +112,14 @@ class AbstractNet(metaclass=ABCMeta):
 
 class SimpleNet(AbstractNet):
 
-    def add_pre_layer(self, layer_factory, activate_function=func.Sigmoid(), x=None, y=None):
+    def add_pre_layer(self, layer_factory, activate_function=func.ReLu(), x=None, y=None, fix_parameter=False):
         w, b = layer_factory.create(x, y)
         self.w.append(w)
         self.b.append(b)
         self.f.append(activate_function)
+        self.learning_flag.append(0.0 if fix_parameter else 1.0)
 
-    def add_mid_layer(self, *units, layer_factory=layer.He(), activate_function=func.ReLu()):
+    def add_mid_layer(self, *units, layer_factory=layer.He(), activate_function=func.ReLu(), fix_parameter=False):
         for layer in range(0, len(units) - 1):
             in_size = units[layer]
             out_size = units[layer + 1]
@@ -124,11 +129,9 @@ class SimpleNet(AbstractNet):
             self.w.append(w)
             self.b.append(b)
             self.f.append(activate_function)
+            self.learning_flag.append(0.0 if fix_parameter else 1.0)
 
-    def add_out_layer(self, units, layer_factory=layer.Random(), activate_function=func.IdentityMapping()):
-        """
-        :type activate_function: af.AbstractActivateFunction
-        """
+    def add_out_layer(self, units, layer_factory=layer.Random(), activate_function=func.IdentityMapping(), fix_parameter=False):
         in_size = self.b[-1].shape[0]
         out_size = units
 
@@ -136,6 +139,7 @@ class SimpleNet(AbstractNet):
         self.w.append(w)
         self.b.append(b)
         self.f.append(activate_function)
+        self.learning_flag.append(0.0 if fix_parameter else 1.0)
 
     def set_learning_rate(self, g):
         self.g = g
@@ -223,10 +227,8 @@ class SimpleNet(AbstractNet):
         for idx in range(1, len(self.w)):
             # 微分値が正 → Wijを大きくしたら誤差Eが大きくなるんでWijを少し小さくする
             # 微分値が負 → Wjiを大きくしたら誤差Eが小さくなるんでWijを少し大きくする
-            self.w[idx] = self.w[idx] - hw[idx] * (dEdW[idx] + dRdW[idx])
-            self.b[idx] = self.b[idx] - hb[idx] * (dEdB[idx] + dRdB[idx])
+            self.w[idx] = self.w[idx] - self.learning_flag[idx] * hw[idx] * (dEdW[idx] + dRdW[idx])
+            self.b[idx] = self.b[idx] - self.learning_flag[idx] * hb[idx] * (dEdB[idx] + dRdB[idx])
             # 極大に発散するのを防ぐため重みの上限は 10e2
-            self.w[idx] = np.minimum(10e2, self.w[idx])
-            self.b[idx] = np.minimum(10e2, self.b[idx])
-
-
+            self.w[idx] = np.maximum(-10e2, np.minimum(10e2, self.w[idx]))
+            self.b[idx] = np.maximum(-10e2, np.minimum(10e2, self.b[idx]))
