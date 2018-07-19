@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def debug(msg, *args):
@@ -15,26 +16,16 @@ def least_square_average(d, y):
     return (np.sum(np.square(d - y)) / 2.0) / float(len(d))
 
 
-def histogram(m, bins=10):
+def draw_hist(m, label, bins=50, min_max=(-10.0, 10.0)):
     """
-    ネットワークの重みのヒストグラムを作ります
-    ```
-    matplotlib の階段グラフに表示する場合には、返値を使って次のようにします
-    plt.step(bin_edges[:-1], hist, where='post')
-    plt.show()
-
-    ※ 学習が進んだ時にネットワークの重みがどうなるかを見るために、複数のヒストグラムを階段グラフとして色を変えながら
-    表示することを目的としています。
-    ある学習状態のヒストグラムを見たい場合には plot.histogram(flat) を使ったほうが楽です
-    ```
-    :param m: 重み行列の配列
-    :param bins: ヒストグラムの区間数 (デフォルト10)
-    :return hist: 頻度データ
-    :return bin_edges: 頻度の下限・上限
+    行列のリストを展開して、matplotlib の　histogram を作ります
+    :param m: 行列のリスト
+    :param label: データの名称
+    :param bins: 区切り数(デフォルト50). Noneを指定すると自動
+    :param min_max: データの幅(デフォルト-10~10). Noneを指定すると自動
+    :return:
     """
     flat = []
     for idx in range(1, len(m)):
         flat.extend(m[idx].flatten().tolist())
-
-    hist, bin_edges = np.histogram(flat, bins=bins)
-    return hist, bin_edges
+    plt.hist(flat, label=label, bins=bins, range=min_max, alpha=0.5)

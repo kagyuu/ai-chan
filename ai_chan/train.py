@@ -31,15 +31,11 @@ class NetTrainer:
         self.train_size = divide - 1
         # 評価用データの添字
         self.eval_data = self.train_size
-        # 重みのヒストグラム
-        self.hist_w_start = None
-        self.edge_w_start = None
-        self.hist_b_start = None
-        self.edge_b_start = None
-        self.hist_w_finish = None
-        self.edge_w_finish = None
-        self.hist_b_finish = None
-        self.edge_b_finish = None
+        # 初期状態と終了状態のパラメータ
+        self.start_w = None
+        self.start_b = None
+        self.finish_w = None
+        self.finish_b = None
 
 
     def train(self, loop):
@@ -49,13 +45,9 @@ class NetTrainer:
         :param loop: 学習回数
         :return: 最小エラー
         """
-        # 初期の重みの頻度
-        hist_w, bin_edges_w = util.histogram(self.nnet.w)
-        hist_b, bin_edges_b = util.histogram(self.nnet.b)
-        self.hist_w_start = hist_w
-        self.edge_w_start = bin_edges_w
-        self.hist_b_start = hist_b
-        self.edge_b_start = bin_edges_b
+        # 初期の重みをとっておく
+        self.start_w = np.copy(self.nnet.w)
+        self.start_b = np.copy(self.nnet.b)
 
         min_error = sys.float_info.max
 
@@ -87,13 +79,9 @@ class NetTrainer:
             # パラメータ修正
             self.nnet.adjust_network(dEdW, dEdB)
 
-        # 学習後の重みの頻度
-        hist_w, bin_edges_w = util.histogram(self.nnet.w)
-        hist_b, bin_edges_b = util.histogram(self.nnet.b)
-        self.hist_w_finish = hist_w
-        self.edge_w_finish = bin_edges_w
-        self.hist_b_finish = hist_b
-        self.edge_b_finish = bin_edges_b
+        # 最後の重みをとっておく
+        self.finish_w = np.copy(self.nnet.w)
+        self.finish_b = np.copy(self.nnet.b)
 
         return min_error
 

@@ -37,12 +37,13 @@ class AbstractNet(metaclass=ABCMeta):
     def add_pre_layer(self, layer_factory, activate_function, x, y, fix_parameter):
         """
         ニューラルネットワークに (初期状態で) 統計的な前処理を行うレイヤを追加します.
-        活性化関数はシグモイド関数になります.
+        活性化関数はReLu関数になります.
         :param layer_factory: レイヤを初期化する関数
         :param activate_function: 活性化関数
         :param x: 入力データ
         :param y: 教師値
         :param fix_parameter: この層の W,b を固定するかどうかのフラグ
+        :return: x をこの層で変換したときの出力
         """
         pass
 
@@ -119,22 +120,28 @@ class SimpleNet(AbstractNet):
         self.f.append(activate_function)
         self.learning_flag.append(0.0 if fix_parameter else 1.0)
 
+        u = np.dot(w, x) + b
+        z = activate_function.calc(u)
+        return z
+
     def add_mid_layer(self, *units, layer_factory=layer.He(), activate_function=func.ReLu(), fix_parameter=False):
+        # すでに前の層があるのであれば、その層の出力を入力として units[0] 個の出力を行う層を作る
+        if len(self.w) > 1:
+            in_size = self.b[-1].shape[0]
+            out_size = units[0]
+            self.__append_layer(in_size, out_size, layer_factory, activate_function, fix_parameter)
+
         for layer in range(0, len(units) - 1):
             in_size = units[layer]
             out_size = units[layer + 1]
-
-            w, b = layer_factory.create(in_size, out_size)
-
-            self.w.append(w)
-            self.b.append(b)
-            self.f.append(activate_function)
-            self.learning_flag.append(0.0 if fix_parameter else 1.0)
+            self.__append_layer(in_size, out_size, layer_factory, activate_function, fix_parameter)
 
     def add_out_layer(self, units, layer_factory=layer.Random(), activate_function=func.IdentityMapping(), fix_parameter=False):
         in_size = self.b[-1].shape[0]
         out_size = units
+        self.__append_layer(in_size, out_size, layer_factory, activate_function, fix_parameter)
 
+    def __append_layer(self, in_size, out_size, layer_factory, activate_function, fix_parameter):
         w, b = layer_factory.create(in_size, out_size)
         self.w.append(w)
         self.b.append(b)

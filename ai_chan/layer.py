@@ -101,6 +101,11 @@ class Normalize(PreLayerFactory):
         b = -avr_x/σ
         としたとき、このニューラルネットは、標準化スコアを出力させることができます。
 
+        このクラスで作られるレイヤは、活性化関数に ReLu を使った場合にすべての情報を
+        次のレイヤに渡せるように、標準化スコアと標準化スコアの -1 倍を出力します.
+        (ReLuは0以下を0に丸める活性化関数なので、標準化スコアと標準化スコアの-1倍
+        を出力すれば、そのどちらかが次の層に渡ることになる)
+
         ※ 計算上 分散σ(n) が、非常に小さくなるのを防ぐために σ(n) には 10e-7 を加えています。
         :param x: 入力データ
         :param y: 期待出力
@@ -112,7 +117,9 @@ class Normalize(PreLayerFactory):
 
         # 対角成分が sigma[i] な対角行列を作ります(対角成分以外0)
         w = np.diag(1.0 / sigma)
+        w = np.vstack((w, -1.0 * w))
         # b[i] = -average[i]/sigma[i] なバイアスベクトルb(N行1列)を作ります
         b = np.array([- average / sigma]).T
+        b = np.vstack((b, -1.0 * b))
 
         return w, b
