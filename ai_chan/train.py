@@ -37,7 +37,6 @@ class NetTrainer:
         self.finish_w = None
         self.finish_b = None
 
-
     def train(self, loop):
         """
         学習を行います.
@@ -79,6 +78,7 @@ class NetTrainer:
             # パラメータ修正
             self.nnet.adjust_network(dEdW, dEdB)
 
+        # TODO: 最後の重みではなく、最も汎化誤差が小さい w と b をとっておくようにする
         # 最後の重みをとっておく
         self.finish_w = np.copy(self.nnet.w)
         self.finish_b = np.copy(self.nnet.b)
@@ -104,4 +104,5 @@ class NetTrainer:
 
         return d_train, y_train, d_eval, y_eval
 
+    # TODO 訓練データを返すメソッドを作る。出力層で線形回帰を行うため
 

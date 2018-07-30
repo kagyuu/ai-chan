@@ -24,8 +24,8 @@ class TestBackward(unittest.TestCase):
         #         | 0|                         D
         #         | 1|                        | 0|
         net = nnet.SimpleNet()
-        net.add_mid_layer(2, 3, layer_factory=layer.Seq())
-        net.add_out_layer(1, layer_factory=layer.Seq())
+        net.add_layer(2, 3, layer_factory=layer.Seq())
+        net.add_layer(1, layer_factory=layer.Seq())
 
         x = np.array([
             [1],
@@ -76,8 +76,8 @@ class TestBackward(unittest.TestCase):
         1データを繰り返しパラメータ調整を行うことで、誤差が小さくなることを検証します
         """
         net = nnet.SimpleNet()
-        net.add_mid_layer(2, 3, layer_factory=layer.Seq())
-        net.add_out_layer(1, layer_factory=layer.Seq())
+        net.add_layer(2, 3, layer_factory=layer.Seq())
+        net.add_layer(1, layer_factory=layer.Seq())
 
         x = np.array([
             [1],
@@ -118,8 +118,8 @@ class TestBackward(unittest.TestCase):
         #         | 1 3|                            | 0 10|
 
         net = nnet.SimpleNet()
-        net.add_mid_layer(2, 3, layer_factory=layer.Seq())
-        net.add_out_layer(1, layer_factory=layer.Seq())
+        net.add_layer(2, 3, layer_factory=layer.Seq())
+        net.add_layer(1, layer_factory=layer.Seq())
 
         x = np.array([
             [ 1,-1],
@@ -169,8 +169,8 @@ class TestBackward(unittest.TestCase):
         複数データを繰り返しパラメータ調整を行うことで、誤差が小さくなることを検証します
         """
         net = nnet.SimpleNet()
-        net.add_mid_layer(2, 3, layer_factory=layer.Seq())
-        net.add_out_layer(1, layer_factory=layer.Seq())
+        net.add_layer(2, 3, layer_factory=layer.Seq())
+        net.add_layer(1, layer_factory=layer.Seq())
 
         x = np.array([
             [ 1,-1],

@@ -34,7 +34,7 @@ class AbstractNet(metaclass=ABCMeta):
         self.d = weight.NoDecay()
 
     @abstractmethod
-    def add_pre_layer(self, layer_factory, activate_function, x, y, fix_parameter):
+    def add_pre_layer(self, layer_factory, activate_function, x, fix_parameter):
         """
         ニューラルネットワークに (初期状態で) 統計的な前処理を行うレイヤを追加します.
         活性化関数はReLu関数になります.
@@ -48,7 +48,7 @@ class AbstractNet(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def add_mid_layer(self, *units, layer_factory, activate_function, fix_parameter):
+    def add_layer(self, *units, layer_factory, activate_function, fix_parameter):
         """
         ニューラルネットワークに 中間層を追加します
         :param *units: 中間層のサイズを可変引数で指定します
@@ -59,11 +59,12 @@ class AbstractNet(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def add_out_layer(self, units, layer_factory, activate_function, fix_parameter):
+    def add_post_layer(self, x, y, layer_factory, activate_function, fix_parameter):
         """
         ニューラルネットワークに 出力層を追加します
-        :param units: 出力ユニットのサイズを指定します
-        :param layer_factory: レイヤを初期化する関数 (省略時:He)
+        :param x: 入力データ
+        :param y: 出力データ
+        :param layer_factory: レイヤを初期化する関数 (省略時:Random)
         :param activate_function: 活性化関数 (省略時:恒等写像)
         :param fix_parameter: この層の W,b を固定するかどうかのフラグ
         """
@@ -113,8 +114,8 @@ class AbstractNet(metaclass=ABCMeta):
 
 class SimpleNet(AbstractNet):
 
-    def add_pre_layer(self, layer_factory, activate_function=func.ReLu(), x=None, y=None, fix_parameter=False):
-        w, b = layer_factory.create(x, y)
+    def add_pre_layer(self, layer_factory, activate_function=func.ReLu(), x=None, fix_parameter=False):
+        w, b = layer_factory.create(x)
         self.w.append(w)
         self.b.append(b)
         self.f.append(activate_function)
@@ -124,7 +125,7 @@ class SimpleNet(AbstractNet):
         z = activate_function.calc(u)
         return z
 
-    def add_mid_layer(self, *units, layer_factory=layer.He(), activate_function=func.ReLu(), fix_parameter=False):
+    def add_layer(self, *units, layer_factory=layer.He(), activate_function=func.ReLu(), fix_parameter=False):
         # すでに前の層があるのであれば、その層の出力を入力として units[0] 個の出力を行う層を作る
         if len(self.w) > 1:
             in_size = self.b[-1].shape[0]
@@ -136,10 +137,13 @@ class SimpleNet(AbstractNet):
             out_size = units[layer + 1]
             self.__append_layer(in_size, out_size, layer_factory, activate_function, fix_parameter)
 
-    def add_out_layer(self, units, layer_factory=layer.Random(), activate_function=func.IdentityMapping(), fix_parameter=False):
-        in_size = self.b[-1].shape[0]
-        out_size = units
-        self.__append_layer(in_size, out_size, layer_factory, activate_function, fix_parameter)
+    def add_post_layer(self, x, y, layer_factory=layer.LeastSquare(), activate_function=func.IdentityMapping()
+                      , fix_parameter=False):
+        w, b = layer_factory.create(self.forward(x), activate_function.inv(y))
+        self.w.append(w)
+        self.b.append(b)
+        self.f.append(activate_function)
+        self.learning_flag.append(0.0 if fix_parameter else 1.0)
 
     def __append_layer(self, in_size, out_size, layer_factory, activate_function, fix_parameter):
         w, b = layer_factory.create(in_size, out_size)

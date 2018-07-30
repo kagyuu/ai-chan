@@ -15,8 +15,8 @@ class TestForward(unittest.TestCase):
         # L1:in 2→ out 3
         # L2:in 3→ out 1
         net = nnet.SimpleNet()
-        net.add_mid_layer(2, 3, layer_factory=layer.Seq())
-        net.add_out_layer(1, layer_factory=layer.Seq())
+        net.add_layer(2, 3, layer_factory=layer.Seq())
+        net.add_layer(1, layer_factory=layer.Seq())
 
         x = np.array([
             [1],
@@ -73,8 +73,8 @@ class TestForward(unittest.TestCase):
         # L1:in 2→ out 3
         # L2:in 3→ out 1
         net = nnet.SimpleNet()
-        net.add_mid_layer(2, 3, layer_factory=layer.Seq())
-        net.add_out_layer(1, layer_factory=layer.Seq())
+        net.add_layer(2, 3, layer_factory=layer.Seq())
+        net.add_layer(1, layer_factory=layer.Seq())
 
         x = np.array([
             [ 1, -1],

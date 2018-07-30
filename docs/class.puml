@@ -32,7 +32,7 @@ drop_rate = 0.0
 w_mask [ドロップアウト用マスク]
 b_mask [ドロップアウト用マスク]
 add_pre_layer(layer_factory, activate_function, x, d)
-add_mid_layer([units], layer_factory, activate_function)
+add_layer([units], layer_factory, activate_function)
 add_post_layer(units, layer_factory, activate_function)
 set_weight_decay(weight_decay)
 drop_out(rate)

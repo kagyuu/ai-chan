@@ -15,8 +15,8 @@ class TestCreateNetwork(unittest.TestCase):
         # L2:in 4→ out 5
         # L3:in 5→ out 1
         net = nnet.SimpleNet()
-        net.add_mid_layer(3, 4, 5)
-        net.add_out_layer(1)
+        net.add_layer(3, 4, 5)
+        net.add_layer(1)
 
         self.assertEqual(4, len(net.w))
         self.assertEqual(4, len(net.b))
@@ -45,8 +45,8 @@ class TestCreateNetwork(unittest.TestCase):
         # L1:in 2→ out 3
         # L2:in 3→ out 1
         net = nnet.SimpleNet()
-        net.add_mid_layer(2, 3, layer_factory=layer.Seq())
-        net.add_out_layer(1, layer_factory=layer.Seq())
+        net.add_layer(2, 3, layer_factory=layer.Seq())
+        net.add_layer(1, layer_factory=layer.Seq())
 
         self.assertEqual(3, len(net.w))
         self.assertEqual(3, len(net.b))

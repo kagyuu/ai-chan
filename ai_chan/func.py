@@ -22,6 +22,14 @@ class ActivateFunction(metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def inv(self, x):
+        """
+        関数の逆関数を計算します.
+        逆関数が非線形であったり、無限大に発散するときには、実用上問題ない4適当な値を返します.
+        """
+        pass
+
+    @abstractmethod
     def delta(self, d, y):
         """
         出力層にこの関数を使った場合のδ(L)を計算します
@@ -45,6 +53,9 @@ class IdentityMapping(ActivateFunction):
     def differential(self, x):
         return np.ones_like(x)
 
+    def inv(self, x):
+        return x
+
     def delta(self, d, y):
         return y - d
 
@@ -62,6 +73,9 @@ class Sigmoid(ActivateFunction):
     def differential(self, x):
         s = self.calc(x)
         return (1.0 - s) * s
+
+    def inv(self, x):
+        return np.where(x > 0.5, 0.99, -0.99)
 
     def delta(self, d, y):
         # delta = ((y - d) / (y * (1 - y))) * self.differential(y)
@@ -85,6 +99,9 @@ class Tanh(ActivateFunction):
         # return 4.0 / np.power((np.exp(x) + np.exp(-1.0 * x)), 2)
         return 1.0 / (np.cosh(x) ** 2)
 
+    def inv(self, x):
+        return np.where(x > 0.0, 0.99, -0.99)
+
     def delta(self, d, y):
         # Tanh は、微分しても自分が出てこないので、Sigmoid のようにきれいな式にならない
         return ((y - d) / (y * (1 - y))) * self.differential(y)
@@ -103,6 +120,9 @@ class ReLu(ActivateFunction):
 
     def differential(self, x):
         return np.where(x > 0, 1, 0)
+
+    def inv(self, x):
+        return np.where(x > 0.0, x, -0.99)
 
     def delta(self, d, y):
         return y - d

@@ -1,4 +1,5 @@
 import numpy as np
+from scipy import linalg
 from abc import ABCMeta, abstractmethod
 
 
@@ -9,10 +10,10 @@ class LayerFactory(metaclass=ABCMeta):
 class PreLayerFactory(LayerFactory):
     """
     入力層のレイヤを作ります.
-    教師データの統計分析を行うレイヤを作ります.
+    教師データの統計処理を行うレイヤを作ります.
     """
     @abstractmethod
-    def create(self, x, y):
+    def create(self, x):
         pass
 
 
@@ -22,6 +23,16 @@ class MidLayerFactory(LayerFactory):
     """
     @abstractmethod
     def create(self, in_size, out_size):
+        pass
+
+
+class OutLayerFactory(LayerFactory):
+    """
+    出力層のレイヤを作ります.
+    出力層の初期値に、統計処理で求めたパラメータを設定します
+    """
+    @abstractmethod
+    def create(self, x, y):
         pass
 
 
@@ -53,6 +64,7 @@ class Random(MidLayerFactory):
         """
         w = np.random.normal(0, 1, (out_size, in_size))
         b = np.random.normal(0, 1, (1, out_size)).T
+
         return w, b
 
 
@@ -91,7 +103,7 @@ class He(MidLayerFactory):
 
 class Normalize(PreLayerFactory):
 
-    def create(self, x, y):
+    def create(self, x):
         """
         入力データを標準化スコアに変換するレイヤを作ります.
         標準化スコア(n,i) = (x(n,i) - avr_x(n) / σ(n) = x(n,i)/σ(n) - avr_x(n)/σ(n)
@@ -112,6 +124,7 @@ class Normalize(PreLayerFactory):
         :return w: 重み行列
         :return b: バイアス
         """
+
         sigma = np.sqrt(np.var(x, axis=1) ** 2 + 10e-7)
         average = np.mean(x, axis=1)
 
@@ -121,5 +134,42 @@ class Normalize(PreLayerFactory):
         # b[i] = -average[i]/sigma[i] なバイアスベクトルb(N行1列)を作ります
         b = np.array([- average / sigma]).T
         b = np.vstack((b, -1.0 * b))
+
+        return w, b
+
+
+class LeastSquare(OutLayerFactory):
+
+    def create(self, x, y):
+        """
+        出力層の重みに、回帰分析で得た重みを設定します
+        :param x: 第L-1層の出力 = 出力層(L層)の入力
+        :param y: このネットワークの出力 = 出力層(L層)の出力
+        :return: x と y を線形回帰した重み w,b
+        """
+        A = x.T
+        A = np.hstack((A, np.ones((A.shape[0], 1))))
+        w_list = []
+        b_list = []
+
+        if 1 == np.ndim(y):
+            w, b = self.__calc_wb(A, y)
+            w_list.append(w)
+            b_list.append(b)
+
+        else :
+            for idx in range(0, y.shape[1]) :
+                w, b = self.__calc_wb(A, y[idx])
+                w_list.append(w)
+                b_list.append(b)
+
+        return np.array(w_list), np.array(b_list)
+
+    def __calc_wb(self, A, B):
+        C, resid, rank, sigma = linalg.lstsq(A, B)
+
+        r = np.ndarray.tolist(C)
+        w = r[0:-1]
+        b = [r[-1]]
 
         return w, b
