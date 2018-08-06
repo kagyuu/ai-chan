@@ -75,7 +75,7 @@ class Sigmoid(ActivateFunction):
         return (1.0 - s) * s
 
     def inv(self, x):
-        return np.where(x > 0.5, 0.99, -0.99)
+        return np.where(x > 0.5, 9.99, -9.99)
 
     def delta(self, d, y):
         # delta = ((y - d) / (y * (1 - y))) * self.differential(y)
@@ -100,7 +100,7 @@ class Tanh(ActivateFunction):
         return 1.0 / (np.cosh(x) ** 2)
 
     def inv(self, x):
-        return np.where(x > 0.0, 0.99, -0.99)
+        return np.where(x > 0.0, 9.99, -9.99)
 
     def delta(self, d, y):
         # Tanh は、微分しても自分が出てこないので、Sigmoid のようにきれいな式にならない
@@ -122,7 +122,7 @@ class ReLu(ActivateFunction):
         return np.where(x > 0, 1, 0)
 
     def inv(self, x):
-        return np.where(x > 0.0, x, -0.99)
+        return np.where(x > 0.0, x, -9.99)
 
     def delta(self, d, y):
         return y - d
