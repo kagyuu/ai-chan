@@ -87,26 +87,30 @@ class AbstractNet(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def forward(self, x):
+    def forward(self, x, xp=np):
         """
         順伝搬
         :param x: 入力データ
+        :param xp: numpy or cupy
         :return: 予測値
         """
         pass
 
     @abstractmethod
-    def backward(self, d, y):
+    def backward(self, d, y, xp=np):
         """
         逆伝搬
         :param d: 教師値
         :param y: 予測値
+        :param xp: numpy or cupy
         :return:
         """
         pass
 
-    def adjust_network(self):
+    @abstractmethod
+    def adjust_network(self, dEdW, dEdB, xp=np):
         """
+        :param xp: numpy or cupy
         :return:
         """
         pass
@@ -158,7 +162,7 @@ class SimpleNet(AbstractNet):
     def set_weight_decay(self, d):
         self.d = d
 
-    def forward(self, x):
+    def forward(self, x, xp=np):
         """
          順伝搬します.
          z(0) = x
@@ -168,6 +172,7 @@ class SimpleNet(AbstractNet):
          }
          y = func2 ( z(L) )
         :param x: 入力データ　(複数のデータを同時に投入できる)
+        :param xp: numpy or cupy
         :return: 出力
         """
 
@@ -185,7 +190,7 @@ class SimpleNet(AbstractNet):
             # w・z はn行m列の行列、bはn行1列のベクトル
             # numpy の 行列計算の broadcast 規則 により
             # b が 列方向に m 個コピーされた n行m列の行列として計算される
-            u = np.dot(self.w[layer], z) + self.b[layer]
+            u = xp.dot(self.w[layer], z) + self.b[layer]
             self.u_memento.append(u)
             # 活性化関数
             z = self.f[layer].calc(u)
@@ -196,7 +201,7 @@ class SimpleNet(AbstractNet):
 
         return y
 
-    def backward(self, d, y):
+    def backward(self, d, y, xp=np):
 
         delta = self.f[-1].delta(d, y)
 
@@ -211,14 +216,14 @@ class SimpleNet(AbstractNet):
         for l in range(len(self.w) - 1, 0, -1):
             # dEdW = δ[l] (z[l-1].T) の各要素をバッチサイズで割ったもの
             # dEdB = δ[l] の各行平均
-            dEdW.append(np.dot(delta, self.z_memento[l - 1].T) / batch_size)
-            dEdB.append(np.array([np.mean(delta, axis=1)]).T)
+            dEdW.append(xp.dot(delta, self.z_memento[l - 1].T) / batch_size)
+            dEdB.append(xp.array([xp.mean(delta, axis=1)]).T)
 
             # 誤差逆伝搬 δ[l-1] = δ[l] W[l] f'(u[l-1])
             # layer=1 のとき、次は 入力層(layer=0) なので、もう逆伝搬する
             # 必要ない (実装上は u[0] が None なのでエラーになる)
             if l > 1:
-                delta = self.f[l - 1].differential(self.u_memento[l - 1]) * np.dot(self.w[l].T, delta)
+                delta = self.f[l - 1].differential(self.u_memento[l - 1]) * xp.dot(self.w[l].T, delta)
 
         # 第0層(入力層)のダミー微分値
         dEdW.append(None)
@@ -230,7 +235,7 @@ class SimpleNet(AbstractNet):
 
         return dEdW, dEdB
 
-    def adjust_network(self, dEdW, dEdB):
+    def adjust_network(self, dEdW, dEdB, xp=np):
         # ネットワークの重みの調整
         hw, hb = self.g.eta(dEdW, dEdB)
         dRdW, dRdB = self.d.r(self.w, self.b)
@@ -241,5 +246,5 @@ class SimpleNet(AbstractNet):
             self.w[idx] = self.w[idx] - self.learning_flag[idx] * hw[idx] * (dEdW[idx] + dRdW[idx])
             self.b[idx] = self.b[idx] - self.learning_flag[idx] * hb[idx] * (dEdB[idx] + dRdB[idx])
             # 極大に発散するのを防ぐため重みの上限は 10e2
-            self.w[idx] = np.maximum(-10e2, np.minimum(10e2, self.w[idx]))
-            self.b[idx] = np.maximum(-10e2, np.minimum(10e2, self.b[idx]))
+            self.w[idx] = xp.maximum(-10e2, xp.minimum(10e2, self.w[idx]))
+            self.b[idx] = xp.maximum(-10e2, xp.minimum(10e2, self.b[idx]))

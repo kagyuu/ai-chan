@@ -60,7 +60,11 @@ class NetTrainer:
             self.ge.append(error)
 
             # 最小エラー値の更新
-            min_error = min_error if min_error < error else error
+            if min_error < error:
+                min_error = error
+                # 重みをとっておく
+                self.finish_w = np.copy(self.nnet.w)
+                self.finish_b = np.copy(self.nnet.b)
 
             # 今回の学習セット番号
             current_batch = cnt % self.train_size
@@ -77,11 +81,6 @@ class NetTrainer:
             dEdW, dEdB = self.nnet.backward(self.d[current_batch], y)
             # パラメータ修正
             self.nnet.adjust_network(dEdW, dEdB)
-
-        # TODO: 最後の重みではなく、最も汎化誤差が小さい w と b をとっておくようにする
-        # 最後の重みをとっておく
-        self.finish_w = np.copy(self.nnet.w)
-        self.finish_b = np.copy(self.nnet.b)
 
         return min_error
 

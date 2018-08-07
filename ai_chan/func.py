@@ -8,21 +8,21 @@ class ActivateFunction(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def calc(self, x):
+    def calc(self, x, xp=np):
         """
         x に対する値を計算します
         """
         pass
 
     @abstractmethod
-    def differential(self, x):
+    def differential(self, x, xp=np):
         """
         x に対する微分値を計算します
         """
         pass
 
     @abstractmethod
-    def inv(self, x):
+    def inv(self, x, xp=np):
         """
         関数の逆関数を計算します.
         逆関数が非線形であったり、無限大に発散するときには、実用上問題ない4適当な値を返します.
@@ -47,13 +47,13 @@ class IdentityMapping(ActivateFunction):
     """
     恒等写像
     """
-    def calc(self, x):
+    def calc(self, x, xp=np):
         return x
 
-    def differential(self, x):
-        return np.ones_like(x)
+    def differential(self, x, xp=np):
+        return xp.ones_like(x)
 
-    def inv(self, x):
+    def inv(self, x, xp=np):
         return x
 
     def delta(self, d, y):
@@ -67,15 +67,15 @@ class Sigmoid(ActivateFunction):
     """
     シグモイド関数
     """
-    def calc(self, x):
-        return 1.0 / (1.0 + np.exp(-1.0 * x))
+    def calc(self, x, xp=np):
+        return 1.0 / (1.0 + xp.exp(-1.0 * x))
 
-    def differential(self, x):
+    def differential(self, x, xp=np):
         s = self.calc(x)
         return (1.0 - s) * s
 
-    def inv(self, x):
-        return np.where(x > 0.5, 9.99, -9.99)
+    def inv(self, x, xp=np):
+        return xp.where(x > 0.5, 9.99, -9.99)
 
     def delta(self, d, y):
         # delta = ((y - d) / (y * (1 - y))) * self.differential(y)
@@ -91,16 +91,16 @@ class Tanh(ActivateFunction):
     """
     双曲線正接関数(tanh)
     """
-    def calc(self, x):
+    def calc(self, x, xp=np):
         # return (np.exp(x) - np.exp(-1.0 * x)) / (np.exp(x) + np.exp(-1.0 * x))
-        return np.tanh(x)
+        return xp.tanh(x)
 
-    def differential(self, x):
+    def differential(self, x, xp=np):
         # return 4.0 / np.power((np.exp(x) + np.exp(-1.0 * x)), 2)
-        return 1.0 / (np.cosh(x) ** 2)
+        return 1.0 / (xp.cosh(x) ** 2)
 
-    def inv(self, x):
-        return np.where(x > 0.0, 9.99, -9.99)
+    def inv(self, x, xp=np):
+        return xp.where(x > 0.0, 9.99, -9.99)
 
     def delta(self, d, y):
         # Tanh は、微分しても自分が出てこないので、Sigmoid のようにきれいな式にならない
@@ -114,15 +114,15 @@ class ReLu(ActivateFunction):
     """
     Rectified Linear Unit (正規化線形関数)
     """
-    def calc(self, x):
+    def calc(self, x, xp=np):
         # np.maximum( a, b ) means [max(a[0],b[0]), max(a[1], b[1]), max(a[2], b[2]),...]
-        return np.maximum(0, x)
+        return xp.maximum(0, x)
 
-    def differential(self, x):
-        return np.where(x > 0, 1, 0)
+    def differential(self, x, xp=np):
+        return xp.where(x > 0, 1, 0)
 
-    def inv(self, x):
-        return np.where(x > 0.0, x, -9.99)
+    def inv(self, x, xp=np):
+        return xp.where(x > 0.0, x, -9.99)
 
     def delta(self, d, y):
         return y - d
