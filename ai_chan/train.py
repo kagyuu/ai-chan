@@ -34,6 +34,8 @@ class NetTrainer:
         # 初期状態と終了状態のパラメータ
         self.start_w = None
         self.start_b = None
+        self.best_w = None
+        self.best_b
         self.finish_w = None
         self.finish_b = None
 

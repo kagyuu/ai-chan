@@ -1,9 +1,6 @@
 from abc import ABCMeta, abstractmethod
 import numpy as np
-from ai_chan import func
-from ai_chan import grad
-from ai_chan import layer
-from ai_chan import weight
+from ai_chan import func, grad, layer, weight
 
 
 class AbstractNet(metaclass=ABCMeta):
@@ -217,7 +214,7 @@ class SimpleNet(AbstractNet):
             # dEdW = δ[l] (z[l-1].T) の各要素をバッチサイズで割ったもの
             # dEdB = δ[l] の各行平均
             dEdW.append(xp.dot(delta, self.z_memento[l - 1].T) / batch_size)
-            dEdB.append(xp.array([xp.mean(delta, axis=1)]).T)
+            dEdB.append(xp.mean(delta, axis=1).reshape(1,delta.shape[0]).T)
 
             # 誤差逆伝搬 δ[l-1] = δ[l] W[l] f'(u[l-1])
             # layer=1 のとき、次は 入力層(layer=0) なので、もう逆伝搬する
@@ -235,7 +232,7 @@ class SimpleNet(AbstractNet):
 
         return dEdW, dEdB
 
-    def adjust_network(self, dEdW, dEdB, xp=np):
+    def adjust_network(self, dEdW, dEdB, ap=np):
         # ネットワークの重みの調整
         hw, hb = self.g.eta(dEdW, dEdB)
         dRdW, dRdB = self.d.r(self.w, self.b)
@@ -246,5 +243,5 @@ class SimpleNet(AbstractNet):
             self.w[idx] = self.w[idx] - self.learning_flag[idx] * hw[idx] * (dEdW[idx] + dRdW[idx])
             self.b[idx] = self.b[idx] - self.learning_flag[idx] * hb[idx] * (dEdB[idx] + dRdB[idx])
             # 極大に発散するのを防ぐため重みの上限は 10e2
-            self.w[idx] = xp.maximum(-10e2, xp.minimum(10e2, self.w[idx]))
-            self.b[idx] = xp.maximum(-10e2, xp.minimum(10e2, self.b[idx]))
+            self.w[idx] = ap.maximum(-10e2, ap.minimum(10e2, self.w[idx]))
+            self.b[idx] = ap.maximum(-10e2, ap.minimum(10e2, self.b[idx]))

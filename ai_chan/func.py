@@ -25,7 +25,7 @@ class ActivateFunction(metaclass=ABCMeta):
     def inv(self, x, xp=np):
         """
         関数の逆関数を計算します.
-        逆関数が非線形であったり、無限大に発散するときには、実用上問題ない4適当な値を返します.
+        逆関数が非線形であったり、無限大に発散するときには、実用上問題ない適当な値を返します.
         """
         pass
 
@@ -36,6 +36,19 @@ class ActivateFunction(metaclass=ABCMeta):
         """
         pass
 
+    '''
+    @abstractmethod
+    def error(d, y, xp=np):
+        """
+        モデルの出力と教師値の誤差を求めます
+        :param d:教師データ(expected)
+        :param y:予想(actual)
+        :return: 誤差
+        """
+        pass
+    '''
+
+    @abstractmethod
     def name(self):
         """
         この関数の名称を返却します
@@ -58,6 +71,12 @@ class IdentityMapping(ActivateFunction):
 
     def delta(self, d, y):
         return y - d
+
+    def error(d, y, xp=np):
+        """
+         自乗誤差平均を求めます
+        """
+        return (xp.sum(xp.square(d - y)) / 2.0) / float(len(d))
 
     def name(self):
         return "恒等写像(Identity Mapping)"

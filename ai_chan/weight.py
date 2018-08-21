@@ -8,12 +8,12 @@ class WeightDecay(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def r(self, dEdW, dEdB, xp=np):
+    def r(self, dEdW, dEdB, ap=np):
         """
         正則化項 rw,rbを返します
         :param w 重み行列
         :param b バイアス
-        :param xp numpy or cupy
+        :param ap numpy or cupy
         :return: 正則化項 rw,rb
         """
         pass
@@ -28,13 +28,13 @@ class NoDecay(WeightDecay):
     def __init__(self):
         pass
 
-    def r(self, w, b, xp=np):
+    def r(self, w, b, ap=np):
         dRdW = [None]
         dRdB = [None]
 
         for idx in range(1, len(w)):
-            dRdW.append(xp.zeros_like(w[idx]))
-            dRdB.append(xp.zeros_like(b[idx]))
+            dRdW.append(ap.zeros_like(w[idx]))
+            dRdB.append(ap.zeros_like(b[idx]))
 
         return dRdW, dRdB
 
@@ -51,13 +51,13 @@ class L1Decay(WeightDecay):
     def __init__(self, rate=0.1):
         self.rate = rate
 
-    def r(self, w, b, xp=np):
+    def r(self, w, b, ap=np):
         dRdW = [None]
         dRdB = [None]
 
         for idx in range(1, len(w)):
-            dRdW.append(self.rate * xp.where(w[idx] > 0.0, 1.0, -1.0))
-            dRdB.append(self.rate * xp.where(b[idx] > 0.0, 1.0, -1.0))
+            dRdW.append(self.rate * ap.where(w[idx] > 0.0, 1.0, -1.0))
+            dRdB.append(self.rate * ap.where(b[idx] > 0.0, 1.0, -1.0))
 
         return dRdW, dRdB
 
@@ -74,7 +74,7 @@ class L2Decay(WeightDecay):
     def __init__(self, rate=0.1):
         self.rate = rate
 
-    def r(self, w, b, xp=np):
+    def r(self, w, b, ap=np):
         dRdW = [None]
         dRdB = [None]
 
@@ -97,19 +97,19 @@ class LmaxDecay(WeightDecay):
     def __init__(self, rate=0.1):
         self.rate = rate
 
-    def r(self, w, b, xp=np):
+    def r(self, w, b, ap=np):
         dRdW = [None]
         dRdB = [None]
 
         for idx in range(1, len(w)):
-            maxW = xp.max(w[idx])
-            maxB = xp.max(b[idx])
-            minW = xp.min(w[idx])
-            minB = xp.min(b[idx])
+            maxW = ap.max(w[idx])
+            maxB = ap.max(b[idx])
+            minW = ap.min(w[idx])
+            minB = ap.min(b[idx])
             abs_maxW = maxW if maxW + minW > 0.0 else minW
             abs_maxB = maxB if maxB + minB > 0.0 else minB
 
-            dRdW.append(self.rate * xp.where(w[idx] == abs_maxW, abs_maxW, 0.0))
-            dRdB.append(self.rate * xp.where(b[idx] == abs_maxB, abs_maxB, 0.0))
+            dRdW.append(self.rate * ap.where(w[idx] == abs_maxW, abs_maxW, 0.0))
+            dRdB.append(self.rate * ap.where(b[idx] == abs_maxB, abs_maxB, 0.0))
 
         return dRdW, dRdB
