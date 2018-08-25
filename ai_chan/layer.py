@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import linalg
 from abc import ABCMeta, abstractmethod
+from ai_chan import const
 
 
 class LayerFactory(metaclass=ABCMeta):
@@ -125,7 +126,7 @@ class Normalize(PreLayerFactory):
         :return b: バイアス
         """
 
-        sigma = np.sqrt(np.var(x, axis=1) ** 2 + 10e-7)
+        sigma = np.sqrt(np.var(x, axis=1) ** 2 + const.FLT16_EPSILON)
         average = np.mean(x, axis=1)
 
         # 対角成分が sigma[i] な対角行列を作ります(対角成分以外0)

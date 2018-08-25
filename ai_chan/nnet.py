@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
 import numpy as np
-from ai_chan import func, grad, layer, weight
+from ai_chan import func, grad, layer, weight, const
 
 
 class AbstractNet(metaclass=ABCMeta):
@@ -187,7 +187,8 @@ class SimpleNet(AbstractNet):
             # w・z はn行m列の行列、bはn行1列のベクトル
             # numpy の 行列計算の broadcast 規則 により
             # b が 列方向に m 個コピーされた n行m列の行列として計算される
-            u = xp.dot(self.w[layer], z) + self.b[layer]
+            u = xp.dot(self.w[layer], z)
+            u += self.b[layer]
             self.u_memento.append(u)
             # 活性化関数
             z = self.f[layer].calc(u)
@@ -208,19 +209,20 @@ class SimpleNet(AbstractNet):
         dEdB = []
 
         # delta の列数が、バッチサイズ
-        batch_size = delta.shape[1]
+        batch_size = float(delta.shape[1])
 
-        for l in range(len(self.w) - 1, 0, -1):
+        for l in range(len(self.w) - 1, 1, -1):
             # dEdW = δ[l] (z[l-1].T) の各要素をバッチサイズで割ったもの
             # dEdB = δ[l] の各行平均
             dEdW.append(xp.dot(delta, self.z_memento[l - 1].T) / batch_size)
-            dEdB.append(xp.mean(delta, axis=1).reshape(1,delta.shape[0]).T)
+            dEdB.append(xp.mean(delta, axis=1, keepdims=True))
 
             # 誤差逆伝搬 δ[l-1] = δ[l] W[l] f'(u[l-1])
-            # layer=1 のとき、次は 入力層(layer=0) なので、もう逆伝搬する
-            # 必要ない (実装上は u[0] が None なのでエラーになる)
-            if l > 1:
-                delta = self.f[l - 1].differential(self.u_memento[l - 1]) * xp.dot(self.w[l].T, delta)
+            delta = self.f[l - 1].differential(self.u_memento[l - 1]) * xp.dot(self.w[l].T, delta)
+
+        # layer=1 の微分値 (layer=1の誤差逆伝搬はしないので for-loop から出してある)
+        dEdW.append(xp.dot(delta, self.z_memento[0].T) / batch_size)
+        dEdB.append(xp.mean(delta, axis=1, keepdims=True))
 
         # 第0層(入力層)のダミー微分値
         dEdW.append(None)
@@ -238,10 +240,14 @@ class SimpleNet(AbstractNet):
         dRdW, dRdB = self.d.r(self.w, self.b)
 
         for idx in range(1, len(self.w)):
+            w = self.w[idx]
+            b = self.b[idx]
+
             # 微分値が正 → Wijを大きくしたら誤差Eが大きくなるんでWijを少し小さくする
             # 微分値が負 → Wjiを大きくしたら誤差Eが小さくなるんでWijを少し大きくする
-            self.w[idx] = self.w[idx] - self.learning_flag[idx] * hw[idx] * (dEdW[idx] + dRdW[idx])
-            self.b[idx] = self.b[idx] - self.learning_flag[idx] * hb[idx] * (dEdB[idx] + dRdB[idx])
-            # 極大に発散するのを防ぐため重みの上限は 10e2
-            self.w[idx] = ap.maximum(-10e2, ap.minimum(10e2, self.w[idx]))
-            self.b[idx] = ap.maximum(-10e2, ap.minimum(10e2, self.b[idx]))
+            w -= self.learning_flag[idx] * hw[idx] * (dEdW[idx] + dRdW[idx])
+            b -= self.learning_flag[idx] * hb[idx] * (dEdB[idx] + dRdB[idx])
+
+            # 重みが「計算機のε」未満にならないようにする
+            self.w[idx] = ap.where(ap.abs(w) < const.FLT16_EPSILON, ap.sign(w) * const.FLT16_EPSILON, w)
+            self.b[idx] = ap.where(ap.abs(b) < const.FLT16_EPSILON, ap.sign(b) * const.FLT16_EPSILON, b)

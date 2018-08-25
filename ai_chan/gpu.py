@@ -4,6 +4,8 @@ import inspect
 import cupy as cp
 from ai_chan import func, grad, nnet, weight
 
+FLOAT_PRECISION = cp.float32
+
 
 def cupy_decorator(func):
     """
@@ -129,7 +131,7 @@ class GPUNet(nnet.SimpleNet):
     @staticmethod
     def __to_gpu(list):
         for cnt in range(0, len(list)):
-            list[cnt] = cp.asarray(list[cnt], dtype=cp.float16)
+            list[cnt] = cp.asarray(list[cnt], dtype=FLOAT_PRECISION)
 
     @staticmethod
     def __to_cpu(list):

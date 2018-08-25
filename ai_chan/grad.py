@@ -23,17 +23,22 @@ class Static(Grad):
 
     def __init__(self, rate=0.001):
         self.rate = rate
+        self.hw = None
+        self.hb = None
 
     def eta(self, dEdW, dEdB, ap=np):
-        hw = [None]
-        hb = [None]
+        if self.hw is not None:
+            return self.hw, self.hb
+
+        self.hw = [None]
+        self.hb = [None]
 
         h = self.rate
         for idx in range(1, len(dEdW)):
-            hw.append(h * ap.ones_like(dEdW[idx]))
-            hb.append(h * ap.ones_like(dEdB[idx]))
+            self.hw.append(h * ap.ones_like(dEdW[idx]))
+            self.hb.append(h * ap.ones_like(dEdB[idx]))
 
-        return hw, hb
+        return self.hw, self.hb
 
 
 class Shrink(Grad):

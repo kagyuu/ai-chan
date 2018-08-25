@@ -35,7 +35,7 @@ class NetTrainer:
         self.start_w = None
         self.start_b = None
         self.best_w = None
-        self.best_b
+        self.best_b = None
         self.finish_w = None
         self.finish_b = None
 
@@ -62,7 +62,7 @@ class NetTrainer:
             self.ge.append(error)
 
             # 最小エラー値の更新
-            if min_error < error:
+            if min_error > error:
                 min_error = error
                 # 重みをとっておく
                 self.finish_w = np.copy(self.nnet.w)
